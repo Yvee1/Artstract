@@ -1,5 +1,4 @@
 const canvas = document.getElementById("pixi-canvas");
-const ctx = canvas.getContext('2d');
 
 function handleImageFile(file){
   const reader = new FileReader();
@@ -7,7 +6,9 @@ function handleImageFile(file){
   reader.onload = (event) => {
     img.src = event.target.result;
     img.onload = function() {
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      let outputElt = document.getElementById("image");
+      outputElt.src = reader.result;
+      outputElt.style.display = 'block';
     }
   }
   reader.readAsDataURL(file);
@@ -47,7 +48,9 @@ function getDelaunayTriangulation(P){
  * @param {Coordinate} p 
  * @param {Array<Coordinate>} T 
  */
-function insert(p, T)
+function insert(p, T) {
+  return;
+}
 
 /**
  * Legalizes edge (pi, pj) if illegal.
