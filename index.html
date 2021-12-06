@@ -4,14 +4,15 @@
     <meta charset="utf-8">
     <title>Artstract</title>
 
+    <!-- Placeholder to get rid of console error. -->
+    <link rel="icon" type="image/png" sizes="2x2"  href="/favicon.png">
+
     <!-- Fonts -->
-    <!-- Roboto -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Roboto -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet"> 
     <!-- Fira -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Fira+Sans&display=swap" rel="stylesheet"> 
 
     <!-- CSS style sheets -->
@@ -23,7 +24,7 @@
 
   <body>
     <div id="game">
-      <canvas id="pixi-canvas"></canvas>
+      <canvas width="800" height="600" id="pixi-canvas"></canvas>
       <h1 id="game-title">Artstract</h1>
       <div id="image-button" class="button">Upload image</div>
       <input type="file" id="file-upload" accept="image/*" style="display:none">

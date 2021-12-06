@@ -1,18 +1,5 @@
 const canvas = document.getElementById("pixi-canvas");
-
-function handleImageFile(file){
-  const reader = new FileReader();
-  const img = new Image();
-  reader.onload = (event) => {
-    img.src = event.target.result;
-    img.onload = function() {
-      let outputElt = document.getElementById("image");
-      outputElt.src = reader.result;
-      outputElt.style.display = 'block';
-    }
-  }
-  reader.readAsDataURL(file);
-}
+const ctx = canvas.getContext('2d');
 
 class Coordinate {
   constructor(x, y) {
@@ -85,26 +72,31 @@ function drawArt() {
 
 }
 
-const app = new PIXI.Application({ antialias: true, view: canvas, transparent: true });
-
-const graphics = new PIXI.Graphics();
-
-// Circle
-graphics.lineStyle(0); // draw a circle, set the lineStyle to zero so the circle doesn't have an outline
-graphics.beginFill(0xDE3249, 1);
-graphics.drawCircle(100, 250, 10);
-graphics.endFill();
-
-// Circle + line style 1
-graphics.lineStyle(2, 0xFEEB77, 1);
-graphics.beginFill(0x650A5A, 1);
-graphics.drawCircle(250, 250, 50);
-graphics.endFill();
-
-// Circle + line style 2
-graphics.lineStyle(10, 0xFFBD01, 1);
-graphics.beginFill(0xC34288, 1);
-graphics.drawCircle(400, 250, 50);
-graphics.endFill();
-
-app.stage.addChild(graphics);
+function drawStuff(img) {
+  // Make an offscreen canvas to render the image on
+  const imgCanvas = document.createElement("canvas");
+  const imgCtx = imgCanvas.getContext("2d");
+  const scale = Math.min(canvas.width / img.width, canvas.height / img.height);
+  console.log(scale);
+  const w = Math.floor(img.width * scale);
+  const h = Math.floor(img.height * scale);
+  imgCanvas.width = w;
+  imgCanvas.height = h;
+  // Draw the image on the canvas
+  imgCtx.drawImage(img, 0, 0, w, h);
+  // Get pixel data of canvas, and thus of the image
+  const imgData = imgCtx.getImageData(0, 0, w, h).data;
+  
+  // Go through the pixels, making jumps of 5, sample the colors and draw circles.
+  const off = 5;
+  const r = 2;
+  for (let x = 0; x < w; x += off){
+    for (let y = 0; y < h; y += off){
+      const index = x + y * w;
+      ctx.fillStyle = `rgba(${imgData[4*index]}, ${imgData[4*index+1]}, ${imgData[4*index+2]}, ${imgData[4*index+3]})`;
+      ctx.beginPath();
+      ctx.arc(x + r, y + r, r, 0, 2*Math.PI);
+      ctx.fill();
+    }
+  }
+}

@@ -33,9 +33,6 @@ body {
 }
 
 #pixi-canvas {
-    width: 800px;
-    height: 600px;
-
     position: absolute;
     top:0;
     bottom: 0;
