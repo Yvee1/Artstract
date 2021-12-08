@@ -16,7 +16,7 @@ function handleImageFile(file){
   function doneLoading(event) {
     // Create image element with the image file, and attach function that is called when image is ready.
     const img = new Image();
-    img.onload = function(){ drawStuff(img) };
+    img.onload = function(){ image = img; drawStuff() };
     img.src = event.target.result;
 
     // Remove start menu GUI
