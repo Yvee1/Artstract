@@ -3,11 +3,14 @@ const ctx = canvas.getContext('2d');
 let image = undefined
 const gui = new dat.GUI({name: 'Artstract GUI'});
 const options = {
-  alpha: 15.0
+  alpha: 15.0,
+  debug: true,
 }
 const alphaController = gui.add(options, 'alpha');
 alphaController.onChange(() => drawStuff());
 
+const debugController = gui.add(options, 'debug');
+debugController.onChange(() => drawStuff());
 const r = 3;
 
 class Coordinate {
@@ -47,10 +50,72 @@ function getColorPalette(image, k) {
 /**
  * Returns edges to draw Delaunay triangulation.
  * @param {Array<Coordinate>} P
+ */
+function getDelaunayTriangulation(P){
+  const coords = P.flatMap(c => [c.x, c.y]);
+  const delaunay = new Delaunator(coords);
+  return delaunay;
+}
+
+/**
+ * Returns Coordinates of triangle around the input point set.
+ */
+function getBoundingTriangle(P) {
+  // Create triangle around P
+  let minX = Number.MAX_VALUE
+  let maxX = Number.MIN_VALUE
+  let minY = Number.MAX_VALUE
+  let maxY = Number.MIN_VALUE
+
+  P.forEach(p => {
+    minX = Math.min(p.x, minX)
+    maxX = Math.max(p.x, maxX)
+    minY = Math.min(p.y, minY)
+    maxY = Math.max(p.y, maxY)
+  });
+
+  // make sure points are also not on the line
+  minX -= 10; 
+  maxX += 10; 
+  minY -= 10; 
+  maxY += 10; 
+
+  const height = maxY - minY;
+  const width = maxX - minX;
+  // create coordinates
+  const topLeftCoordinate = new Coordinate(minX-height, minY);
+  const topRightCoordinate = new Coordinate(maxX+height, minY);
+  // we try to get a 90 degree angle at the top using tan(theta) = o/a
+  const bottomCoordinate = new Coordinate((minX + maxX)/2, (width/2+height)/Math.tan(Math.PI/4))
+
+  return [topLeftCoordinate, topRightCoordinate, bottomCoordinate];
+}
+
+/**
+ * Returns edges to draw Delaunay triangulation.
+ * @param {Array<Coordinate>} P
  * 
  * Implementation: Tristan
  */
-function getDelaunayTriangulation(P){
+function getDelaunayTriangulationIncremental(P) {
+  const [topLeftCoordinate, topRightCoordinate, bottomCoordinate] = getBoundingTriangle(P);
+
+  largeTriangleEdges = [
+    [topLeftCoordinate, topRightCoordinate], 
+    [topRightCoordinate, bottomCoordinate], 
+    [bottomCoordinate, topLeftCoordinate]
+  ];
+  // draw bounding triangle
+  largeTriangleEdges.forEach(edge => {
+    ctx.fillStyle = 'black';
+    ctx.beginPath();
+    ctx.moveTo(edge[0].x, edge[0].y);
+    ctx.lineTo(edge[1].x, edge[1].y);
+    ctx.stroke();
+  })
+
+  // start Delaunay
+
   const coords = P.flatMap(c => [c.x, c.y]);
   const delaunay = new Delaunator(coords);
   return delaunay;
@@ -285,7 +350,7 @@ function drawStuff() {
   drawPoints(fewerPoints);
 
   const coordList = fewerPoints.map(p => p.pos);
-  const del = getDelaunayTriangulation(coordList);
+  const del = options.debug ? getDelaunayTriangulationIncremental(coordList) : getDelaunayTriangulation(coordList);
 
   // Draw triangulation
   // for (let i = 0; i < del.triangles.length; i += 3) {
