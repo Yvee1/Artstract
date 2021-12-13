@@ -13,12 +13,32 @@ const debugController = gui.add(options, 'debug');
 debugController.onChange(() => drawStuff());
 const r = 3;
 
+function sign(p1, p2, p3) {
+  (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y);
+}
+
 class Coordinate {
   constructor(x, y) {
     this.x = x;
     this.y = y;
   }
+
+  /* Returns whether this coordinate lies in the triangle */
+  isInTriangle(triangle, coordList) {
+    p1 = coordList[triangle[0]];
+    p2 = coordList[triangle[1]];
+    p3 = coordList[triangle[2]];
+
+    const d1 = sign(this, p1, p2);
+    const d2 = sign(this, p2, p3);
+    const d3 = sign(this, p1, p3);
+
+    const hasNeg = (d1 < 0) || (d2 < 0) || (d3 < 0);
+    const hasPos = (d1 > 0) || (d2 > 0) || (d3 > 0);
+    return !(hasNeg && hasPos);
+  }
 }
+
 
 class Point {
   constructor(pos, color) {
@@ -91,6 +111,45 @@ function getBoundingTriangle(P) {
   return [topLeftCoordinate, topRightCoordinate, bottomCoordinate];
 }
 
+/* Randomize array in-place using Durstenfeld shuffle algorithm */
+function shuffleArray(array) {
+  for (var i = array.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var temp = array[i];
+      array[i] = array[j];
+      array[j] = temp;
+  }
+}
+
+/**Class for search structure in Delaunay triangulation. */
+class TriangleSearchTreeNode {
+  constructor(triangle) {
+    this.triangle = triangle;
+    this.deleted = false;
+  }
+
+  split(p) {
+    const t1 = new TriangleSearchTreeNode([p, this.triangle[0], this.triangle[1]]);
+    const t2 = new TriangleSearchTreeNode([p, this.triangle[0], this.triangle[2]]);
+    const t3 = new TriangleSearchTreeNode([p, this.triangle[1], this.triangle[2]]);
+    this.descendants = [t1, t2, t3];
+    this.deleted = true;
+  }
+
+  /* Returns triangle which constains the point p */
+  getTriangleContaining(p, coordList) {
+    if (this.deleted) { // recurse through descendants
+      this.descendants.forEach(node => {
+        const triangle = node.searchTriangleContaining(p, coordList);
+        if (triangle) return triangle;
+      });
+      throw "Should not be here."; // should always have at least one triangle containing the point unless not started at root node
+    } else { // return triangle if found, otherwise false
+      return p.isInTriangle(this.triangle, coordList) ? this.triangle : false;
+    }
+  }
+}
+
 /**
  * Returns edges to draw Delaunay triangulation.
  * @param {Array<Coordinate>} P
@@ -98,13 +157,17 @@ function getBoundingTriangle(P) {
  * Implementation: Tristan
  */
 function getDelaunayTriangulationIncremental(P) {
-  const [topLeftCoordinate, topRightCoordinate, bottomCoordinate] = getBoundingTriangle(P);
+  shuffleArray(P); // shuffle in place
+  const boundingTriangleCoords = getBoundingTriangle(P);
+  const [topLeftCoordinate, topRightCoordinate, bottomCoordinate] = boundingTriangleCoords;
+  const coordList = P.concat(P, boundingTriangleCoords);
 
   largeTriangleEdges = [
     [topLeftCoordinate, topRightCoordinate], 
     [topRightCoordinate, bottomCoordinate], 
     [bottomCoordinate, topLeftCoordinate]
   ];
+
   // draw bounding triangle
   largeTriangleEdges.forEach(edge => {
     ctx.fillStyle = 'black';
@@ -113,6 +176,14 @@ function getDelaunayTriangulationIncremental(P) {
     ctx.lineTo(edge[1].x, edge[1].y);
     ctx.stroke();
   })
+
+  // start incremental construction
+  // create search structure
+  let S = TriangleSearchTreeNode([P.size, P.size+1, P.size+2])
+  for (let i = 0; i < P.size; i++) {
+    const enclosingTriangle = S.searchTriangleContaining(i, coordList)
+    // continue
+  }
 
   // start Delaunay
 
