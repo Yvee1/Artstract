@@ -138,15 +138,15 @@ class TriangleSearchTreeNode {
 
   /* Returns triangle which constains the point p */
   getTriangleContaining(p, coordList) {
-    if (this.deleted) { // recurse through descendants
-      this.descendants.forEach(node => {
-        const triangle = node.searchTriangleContaining(p, coordList);
-        if (triangle) return triangle;
-      });
-      throw "Should not be here."; // should always have at least one triangle containing the point unless not started at root node
-    } else { // return triangle if found, otherwise false
-      return p.isInTriangle(this.triangle, coordList) ? this.triangle : false;
-    }
+    if (p.isInTriangle(this.triangle, coordList)) {
+      if (this.deleted) { // recurse through descendants
+        this.descendants.forEach(node => {
+          const triangle = node.getTriangleContaining(p, coordList);
+          if (triangle) return triangle;
+        });
+        throw "Should not be here."; // should always have at least one triangle containing the point unless not started at root node
+      } else return true;  // found leaf node which contains p
+    } else return false; 
   }
 }
 
