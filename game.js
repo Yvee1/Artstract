@@ -14,7 +14,7 @@ debugController.onChange(() => drawStuff());
 const r = 3;
 
 function sign(p1, p2, p3) {
-  (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y);
+  return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y);
 }
 
 class Coordinate {
@@ -23,15 +23,19 @@ class Coordinate {
     this.y = y;
   }
 
-  /* Returns whether this coordinate lies in the triangle */
+  /** 
+   * Returns whether this coordinate lies in the triangle 
+   *
+   * TODO: reference since copied from SO
+   */
   isInTriangle(triangle, coordList) {
-    p1 = coordList[triangle[0]];
-    p2 = coordList[triangle[1]];
-    p3 = coordList[triangle[2]];
+    const p1 = coordList[triangle[0]];
+    const p2 = coordList[triangle[1]];
+    const p3 = coordList[triangle[2]];
 
     const d1 = sign(this, p1, p2);
     const d2 = sign(this, p2, p3);
-    const d3 = sign(this, p1, p3);
+    const d3 = sign(this, p3, p1);
 
     const hasNeg = (d1 < 0) || (d2 < 0) || (d3 < 0);
     const hasPos = (d1 > 0) || (d2 > 0) || (d3 > 0);
@@ -111,7 +115,11 @@ function getBoundingTriangle(P) {
   return [topLeftCoordinate, topRightCoordinate, bottomCoordinate];
 }
 
-/* Randomize array in-place using Durstenfeld shuffle algorithm */
+/**
+ * Randomize array in-place using Durstenfeld shuffle algorithm
+ *  
+ * TODO: reference since copied from SO
+ */
 function shuffleArray(array) {
   for (var i = array.length - 1; i > 0; i--) {
       var j = Math.floor(Math.random() * (i + 1));
@@ -121,7 +129,9 @@ function shuffleArray(array) {
   }
 }
 
-/**Class for search structure in Delaunay triangulation. */
+/**
+ * Class for search structure in Delaunay triangulation. 
+ */
 class TriangleSearchTreeNode {
   constructor(triangle) {
     this.triangle = triangle;
@@ -136,18 +146,64 @@ class TriangleSearchTreeNode {
     this.deleted = true;
   }
 
-  /* Returns triangle which constains the point p */
-  getTriangleContaining(p, coordList) {
-    if (p.isInTriangle(this.triangle, coordList)) {
+  /* Returns triangle which contains the point p */
+  getTriangleNodeContaining(p, coordList) {
+    if (coordList[p].isInTriangle(this.triangle, coordList)) {
       if (this.deleted) { // recurse through descendants
-        this.descendants.forEach(node => {
-          const triangle = node.getTriangleContaining(p, coordList);
-          if (triangle) return triangle;
-        });
+        for (let i = 0; i < this.descendants.length; i++) {
+          const node = this.descendants[i];
+          const triangleNode = node.getTriangleNodeContaining(p, coordList);
+          if (triangleNode != false) {
+            return triangleNode;
+          }
+        }
         throw "Should not be here."; // should always have at least one triangle containing the point unless not started at root node
-      } else return true;  // found leaf node which contains p
+      } else return this;  // found leaf node which contains p
     } else return false; 
   }
+}
+
+/**
+ * Get all triangles from the search structure.
+ */
+function getTriangles(S) {
+  triangles = [];
+  S.descendants.forEach(node => {
+    if (node.deleted) {
+      triangles.concat(getTriangles(node));
+    } else {
+      triangles.push(node.triangle);
+    }
+  });
+  return triangles;
+}
+
+function getTriangleEdges(triangle) {
+  const e1 = [triangle[0], triangle[1]];
+  const e2 = [triangle[0], triangle[2]];
+  const e3 = [triangle[1], triangle[2]];
+  return [e1, e2, e3];
+}
+
+function drawTriangles(triangles, coordList) {
+  triangles.forEach(triangle => {
+    drawTriangle(triangle, coordList)
+  })
+
+}
+
+function drawTriangle(triangle, coordList) {
+  getTriangleEdges(triangle).forEach(edge => {
+    drawEdge(edge, coordList)
+  })
+}
+
+function drawEdge(edge, coordList) {
+  ctx.fillStyle = 'black';
+  ctx.beginPath();
+  ctx.moveTo(coordList[edge[0]].x, coordList[edge[0]].y);
+  ctx.lineTo(coordList[edge[1]].x, coordList[edge[1]].y);
+  ctx.stroke();
 }
 
 /**
@@ -160,7 +216,7 @@ function getDelaunayTriangulationIncremental(P) {
   shuffleArray(P); // shuffle in place
   const boundingTriangleCoords = getBoundingTriangle(P);
   const [topLeftCoordinate, topRightCoordinate, bottomCoordinate] = boundingTriangleCoords;
-  const coordList = P.concat(P, boundingTriangleCoords);
+  const coordList = P.concat(boundingTriangleCoords);
 
   largeTriangleEdges = [
     [topLeftCoordinate, topRightCoordinate], 
@@ -179,11 +235,25 @@ function getDelaunayTriangulationIncremental(P) {
 
   // start incremental construction
   // create search structure
-  let S = TriangleSearchTreeNode([P.size, P.size+1, P.size+2])
-  for (let i = 0; i < P.size; i++) {
-    const enclosingTriangle = S.searchTriangleContaining(i, coordList)
-    // continue
+  let S = new TriangleSearchTreeNode([P.length, P.length+1, P.length+2])
+
+  for (let i = 0; i < P.length; i++) {
+    if (!coordList[i].isInTriangle(S.triangle, coordList)) {
+      console.log(coordList[i]);
+      console.log('is not in');
+      console.log(coordList[S.triangle[0]]);
+      console.log(coordList[S.triangle[1]]);
+      console.log(coordList[S.triangle[2]]);
+    }
   }
+
+  for (let i = 0; i < P.length; i++) {
+    const enclosingTriangle = S.getTriangleNodeContaining(i, coordList);
+    enclosingTriangle.split(i);
+  }
+
+  triangles = getTriangles(S);
+  drawTriangles(triangles, coordList);
 
   // start Delaunay
 
