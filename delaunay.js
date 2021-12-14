@@ -12,6 +12,33 @@ function sign(p1, p2, p3) {
   return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y);
 }
 
+function getTriangleEdges(triangle) {
+  const e1 = [triangle[0], triangle[1]];
+  const e2 = [triangle[0], triangle[2]];
+  const e3 = [triangle[1], triangle[2]];
+  return [e1, e2, e3];
+}
+
+function drawTriangles(triangles, coordList) {
+  triangles.forEach(triangle => {
+    drawTriangle(triangle, coordList)
+  })
+}
+
+function drawTriangle(triangle, coordList) {
+  getTriangleEdges(triangle).forEach(edge => {
+    drawEdge(edge, coordList)
+  })
+}
+
+function drawEdge(edge, coordList) {
+  ctx.fillStyle = 'black';
+  ctx.beginPath();
+  ctx.moveTo(coordList[edge[0]].x, coordList[edge[0]].y);
+  ctx.lineTo(coordList[edge[1]].x, coordList[edge[1]].y);
+  ctx.stroke();
+}
+
 /**
  * Returns Coordinates of triangle around the input point set.
  */
@@ -60,21 +87,27 @@ function shuffleArray(array) {
   }
 }
 
+function edgeEquals(e1, e1) {
+  return ((e1[0] === e2[0] && e1[1] == e2[1]) || (e1[0] === e2[1] && e1[1] == e2[0]));
+}
+
 /**
  * Class for search structure in Delaunay triangulation. 
  */
 class TriangleSearchTreeNode {
-  constructor(triangle) {
+  constructor(triangle, parent = null) {
     this.triangle = triangle;
     this.deleted = false;
+    this.parent = parent;
   }
 
   split(p) {
-    const t1 = new TriangleSearchTreeNode([p, this.triangle[0], this.triangle[1]]);
-    const t2 = new TriangleSearchTreeNode([p, this.triangle[0], this.triangle[2]]);
-    const t3 = new TriangleSearchTreeNode([p, this.triangle[1], this.triangle[2]]);
+    const t1 = new TriangleSearchTreeNode([p, this.triangle[0], this.triangle[1]], this);
+    const t2 = new TriangleSearchTreeNode([p, this.triangle[0], this.triangle[2]], this);
+    const t3 = new TriangleSearchTreeNode([p, this.triangle[1], this.triangle[2]], this);
     this.descendants = [t1, t2, t3];
     this.deleted = true;
+    return this.triangle;
   }
 
   /* Returns triangle which contains the point p */
@@ -92,6 +125,27 @@ class TriangleSearchTreeNode {
       } else return this;  // found leaf node which contains p
     } else return false; 
   }
+
+  /**
+   * Returns the TriangleSearchTreeNodes of adjacent triangles by using the parent
+   */
+  getAdjacentTriangleNodes(edge) {
+    // check for edge
+    if (edge[0].isInTriangle(this.triangle)) {
+      for (let j = 0; j < edges.length; j++) {
+        if (this.deleted) {
+          // recurse 
+          adjacentTriangles = [];
+          for (let i = 0; i < this.descendants.length; i++) {
+            adjacentTriangles.concat(this.descendants[i].getAdjacentTriangleNodes(edge));
+          }
+          return adjacentTriangles;
+        } else {
+          return [this];
+        }
+      }
+    }
+  }
 }
 
 /**
@@ -108,33 +162,6 @@ function getTriangles(S, triangles = []) {
   return triangles;
 }
 
-function getTriangleEdges(triangle) {
-  const e1 = [triangle[0], triangle[1]];
-  const e2 = [triangle[0], triangle[2]];
-  const e3 = [triangle[1], triangle[2]];
-  return [e1, e2, e3];
-}
-
-function drawTriangles(triangles, coordList) {
-  triangles.forEach(triangle => {
-    drawTriangle(triangle, coordList)
-  })
-
-}
-
-function drawTriangle(triangle, coordList) {
-  getTriangleEdges(triangle).forEach(edge => {
-    drawEdge(edge, coordList)
-  })
-}
-
-function drawEdge(edge, coordList) {
-  ctx.fillStyle = 'black';
-  ctx.beginPath();
-  ctx.moveTo(coordList[edge[0]].x, coordList[edge[0]].y);
-  ctx.lineTo(coordList[edge[1]].x, coordList[edge[1]].y);
-  ctx.stroke();
-}
 
 /**
  * Returns edges to draw Delaunay triangulation.

@@ -9,6 +9,9 @@ class Coordinate {
     const p1 = coordList[triangle[0]];
     const p2 = coordList[triangle[1]];
     const p3 = coordList[triangle[2]];
+    if (this === p1 || this === p2 || this === p3) {
+      return true;
+    }
 
     const d1 = sign(this, p1, p2);
     const d2 = sign(this, p2, p3);
