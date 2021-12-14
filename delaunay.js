@@ -97,15 +97,14 @@ class TriangleSearchTreeNode {
 /**
  * Get all triangles from the search structure.
  */
-function getTriangles(S) {
-  triangles = [];
-  S.descendants.forEach(node => {
-    if (node.deleted) {
-      triangles.concat(getTriangles(node));
-    } else {
-      triangles.push(node.triangle);
-    }
-  });
+function getTriangles(S, triangles = []) {
+  if (S.deleted) {
+    S.descendants.forEach(node => {
+      triangles.concat(getTriangles(node, triangles));
+    });
+  } else {
+    triangles.push(S.triangle);
+  }
   return triangles;
 }
 
@@ -169,21 +168,11 @@ function getDelaunayTriangulationIncremental(P) {
   let S = new TriangleSearchTreeNode([P.length, P.length+1, P.length+2])
 
   for (let i = 0; i < P.length; i++) {
-    if (!coordList[i].isInTriangle(S.triangle, coordList)) {
-      console.log(coordList[i]);
-      console.log('is not in');
-      console.log(coordList[S.triangle[0]]);
-      console.log(coordList[S.triangle[1]]);
-      console.log(coordList[S.triangle[2]]);
-    }
-  }
-
-  for (let i = 0; i < P.length; i++) {
     const enclosingTriangle = S.getTriangleNodeContaining(i, coordList);
     enclosingTriangle.split(i);
   }
 
-  triangles = getTriangles(S);
+  let triangles = getTriangles(S);
   drawTriangles(triangles, coordList);
 
   // start Delaunay
