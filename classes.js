@@ -138,10 +138,10 @@ class Triangle {
   /** Returns the vertex opposite of an edge in the triangle. */
   getOppositeVertex(edge) {
     // check whether edge actually of triangle
-    if (!this.edges.some(e => e.equals(edge))) throw "Cannot find opposite of edge not in Triangle";
+    if (!this.isInTriangle(edge)) throw "Cannot find opposite of edge not in Triangle";
 
     for (let i = 0; i < this.vertices.length; i++) {
-      const v = this.vertices[i]
+      const v = this.vertices[i];
       if (v != edge.u && v != edge.v) {
         return v;
       }

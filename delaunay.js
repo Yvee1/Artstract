@@ -115,17 +115,17 @@ class TriangleSearchTreeNode {
     const e1 = new Edge(this.triangle.v1, this.triangle.v2);
     const adj1 = this.getAdjacentTriangleNode(e1);
     t1.setAdjacentTriangleNodes(t2, t3, adj1);
-    adj1.replaceAdjTriangle(this, t1);
+    if (adj1 != null) adj1.replaceAdjTriangle(this, t1);
 
     const e2 = new Edge(this.triangle.v1, this.triangle.v3);
     const adj2 = this.getAdjacentTriangleNode(e2);
     t2.setAdjacentTriangleNodes(t1, t3, adj2);
-    adj2.replaceAdjTriangle(this, t2);
+    if (adj2 !=null) adj2.replaceAdjTriangle(this, t2);
 
     const e3 = new Edge(this.triangle.v2, this.triangle.v3);
     const adj3 = this.getAdjacentTriangleNode(e3);
     t3.setAdjacentTriangleNodes(t1, t2, adj3);
-    adj3.replaceAdjTriangle(this, t3);
+    if (adj3 != null) adj3.replaceAdjTriangle(this, t3);
 
     this.descendants = [t1, t2, t3];
     this.deleted = true;
@@ -133,11 +133,11 @@ class TriangleSearchTreeNode {
     return [t1, t2, t3, e1, e2, e3, p];
   }
 
-  replaceAdjTriangle(toReplace, adj1) {
-    if (this.adjacentTriangleNodes.length != 3) throw "this cannot be true";
+  replaceAdjTriangle(toReplace, adj) {
+    if (this.adjacentTriangleNodes.length > 3) throw "this cannot be true";
     const index = this.adjacentTriangleNodes.indexOf(toReplace);
     if (index !== -1) {
-      this.adjacentTriangleNodes[index] = adj1;
+      this.adjacentTriangleNodes[index] = adj;
     } else {
       throw "replace non existing"
     }
@@ -150,25 +150,25 @@ class TriangleSearchTreeNode {
       // create new triangles
       const adjTriangleNode = node.getAdjacentTriangleNode(edge);
       const adjTriangleVertex = adjTriangleNode.triangle.getOppositeVertex(edge);
-      const t1 = new TriangleSearchTreeNode(new Triangle(p, this.triangle.v1, adjTriangleVertex));
-      const t2 = new TriangleSearchTreeNode(new Triangle(p, this.triangle.v2, adjTriangleVertex));
+      const t1 = new TriangleSearchTreeNode(new Triangle(p, edge.u, adjTriangleVertex));
+      const t2 = new TriangleSearchTreeNode(new Triangle(p, edge.v, adjTriangleVertex));
 
       // update search structure
       adjTriangleNode.flipped(t1, t2);
       node.flipped(t1, t2);
 
       // update adjacent triangles
-      const adjT1 = node.getAdjacentTriangleNode(new Edge(p, this.triangle.v1));
-      const adjT2 = node.getAdjacentTriangleNode(new Edge(p, this.triangle.v2));
-      const adjT3 = adjTriangleNode.getAdjacentTriangleNode(new Edge(this.triangle.v1, adjTriangleVertex));
-      const adjT4 = adjTriangleNode.getAdjacentTriangleNode(new Edge(this.triangle.v2, adjTriangleVertex));
+      const adjT1 = node.getAdjacentTriangleNode(new Edge(p, edge.u));
+      const adjT2 = node.getAdjacentTriangleNode(new Edge(p, edge.v));
+      const adjT3 = adjTriangleNode.getAdjacentTriangleNode(new Edge(edge.u, adjTriangleVertex));
+      const adjT4 = adjTriangleNode.getAdjacentTriangleNode(new Edge(edge.v, adjTriangleVertex));
 
       t1.setAdjacentTriangleNodes(t2, adjT1, adjT3);
-      adjT1.replaceAdjTriangle(node, t1);
-      adjT2.replaceAdjTriangle(node, t2);
+      if (adjT1 != null) adjT1.replaceAdjTriangle(node, t1);
+      if (adjT2 != null) adjT2.replaceAdjTriangle(node, t2);
       t2.setAdjacentTriangleNodes(t1, adjT2, adjT4);
-      adjT3.replaceAdjTriangle(adjTriangleNode, t1);
-      adjT3.replaceAdjTriangle(adjTriangleNode, t2);
+      if (adjT3 != null) adjT3.replaceAdjTriangle(adjTriangleNode, t1);
+      if (adjT4 != null) adjT4.replaceAdjTriangle(adjTriangleNode, t2);
     }
   }
 
@@ -179,17 +179,15 @@ class TriangleSearchTreeNode {
   }
 
   setAdjacentTriangleNodes(n1, n2, n3) {
-    this.adjacentTriangleNodes = [n1, n2, n3];
+    this.adjacentTriangleNodes = [n1, n2, n3].filter(n => n); // filter null out
   }
 
   /** Get adjacentTriangle search tree node given edge */
   getAdjacentTriangleNode(edge) {
     for (let i = 0; i < this.adjacentTriangleNodes.length; i++) {
       const node = this.adjacentTriangleNodes[i];
-      if (!(node instanceof TriangleSearchTreeNode)) continue;
       const triangle = node.triangle;
-
-      if (triangle.edges.some(e => e.equals(edge))) {  // check if edge in triangle
+      if (triangle.isInTriangle(edge)) {  // check if edge in triangle
         return node;
       }
     }
@@ -277,7 +275,6 @@ function getDelaunayTriangulationIncremental(P) {
   // start incremental construction
   // create search structure
   let S = new TriangleSearchTreeNode(new Triangle(P.length, P.length+1, P.length+2))
-  S.setAdjacentTriangleNodes("outside1", "outside2", "outside3");
 
   for (let i = 0; i < P.length; i++) {
     // INSERT(i, S)
