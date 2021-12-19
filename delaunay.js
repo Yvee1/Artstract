@@ -12,31 +12,38 @@ function sign(p1, p2, p3) {
   return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y);
 }
 
-function getTriangleEdges(triangle) {
-  const e1 = [triangle[0], triangle[1]];
-  const e2 = [triangle[0], triangle[2]];
-  const e3 = [triangle[1], triangle[2]];
-  return [e1, e2, e3];
+
+/**TODO: code from SO */
+function isStoredCounterClockWise(v1, v2, v3, coordList) {
+  const a = coordList[v1];
+  const b = coordList[v2];
+  const c = coordList[v3];
+  return (b.x - a.x)*(c.y - a.y)-(c.x - a.x)*(b.y - a.y) > 0;
+}
+
+/**TODO: code from SO */
+function circumCircleContains(v1, v2, v3, p, coordList) {
+  const a = coordList[v1];
+  const b = coordList[v2];
+  const c = coordList[v3];
+  const d = coordList[p];
+  let ax_ = a.x-d.x;
+  let ay_ = a.y-d.y;
+  let bx_ = b.x-d.x;
+  let by_ = b.y-d.y;
+  let cx_ = c.x-d.x;
+  let cy_ = c.y-d.y;
+  return (
+      (ax_*ax_ + ay_*ay_) * (bx_*cy_-cx_*by_) -
+      (bx_*bx_ + by_*by_) * (ax_*cy_-cx_*ay_) +
+      (cx_*cx_ + cy_*cy_) * (ax_*by_-bx_*ay_)
+  ) > 0;
 }
 
 function drawTriangles(triangles, coordList) {
   triangles.forEach(triangle => {
-    drawTriangle(triangle, coordList)
+    triangle.draw(coordList);
   })
-}
-
-function drawTriangle(triangle, coordList) {
-  getTriangleEdges(triangle).forEach(edge => {
-    drawEdge(edge, coordList)
-  })
-}
-
-function drawEdge(edge, coordList) {
-  ctx.fillStyle = 'black';
-  ctx.beginPath();
-  ctx.moveTo(coordList[edge[0]].x, coordList[edge[0]].y);
-  ctx.lineTo(coordList[edge[1]].x, coordList[edge[1]].y);
-  ctx.stroke();
 }
 
 /**
@@ -87,30 +94,109 @@ function shuffleArray(array) {
   }
 }
 
-function edgeEquals(e1, e1) {
-  return ((e1[0] === e2[0] && e1[1] == e2[1]) || (e1[0] === e2[1] && e1[1] == e2[0]));
-}
 
 /**
  * Class for search structure in Delaunay triangulation. 
  */
 class TriangleSearchTreeNode {
-  constructor(triangle, parent = null) {
+  constructor(triangle) {
     this.triangle = triangle;
     this.deleted = false;
-    this.parent = parent;
+
+    this.adjacentTriangleNodes = [];
   }
 
-  split(p) {
-    const t1 = new TriangleSearchTreeNode([p, this.triangle[0], this.triangle[1]], this);
-    const t2 = new TriangleSearchTreeNode([p, this.triangle[0], this.triangle[2]], this);
-    const t3 = new TriangleSearchTreeNode([p, this.triangle[1], this.triangle[2]], this);
+  split(p, coordList) {
+    const t1 = new TriangleSearchTreeNode(new Triangle(p, this.triangle.v1, this.triangle.v2));
+    const t2 = new TriangleSearchTreeNode(new Triangle(p, this.triangle.v1, this.triangle.v3));
+    const t3 = new TriangleSearchTreeNode(new Triangle(p, this.triangle.v2, this.triangle.v3));
+
+    // keep track of adjacent triangle nodes in triangle search tree node
+    const e1 = new Edge(this.triangle.v1, this.triangle.v2);
+    const adj1 = this.getAdjacentTriangleNode(e1);
+    t1.setAdjacentTriangleNodes(t2, t3, adj1);
+    adj1.replaceAdjTriangle(this, t1);
+
+    const e2 = new Edge(this.triangle.v1, this.triangle.v3);
+    const adj2 = this.getAdjacentTriangleNode(e2);
+    t2.setAdjacentTriangleNodes(t1, t3, adj2);
+    adj2.replaceAdjTriangle(this, t2);
+
+    const e3 = new Edge(this.triangle.v2, this.triangle.v3);
+    const adj3 = this.getAdjacentTriangleNode(e3);
+    t3.setAdjacentTriangleNodes(t1, t2, adj3);
+    adj3.replaceAdjTriangle(this, t3);
+
     this.descendants = [t1, t2, t3];
     this.deleted = true;
-    return this.triangle;
+
+    return [t1, t2, t3, e1, e2, e3, p];
   }
 
-  /* Returns triangle which contains the point p */
+  replaceAdjTriangle(toReplace, adj1) {
+    if (this.adjacentTriangleNodes.length != 3) throw "this cannot be true";
+    const index = this.adjacentTriangleNodes.indexOf(toReplace);
+    if (index !== -1) {
+      this.adjacentTriangleNodes[index] = adj1;
+    } else {
+      throw "replace non existing"
+    }
+  }
+
+  legalize(node, edge, p, coordList) {
+    if (node.isIllegal(edge, coordList)) {
+      // flip 
+     
+      // create new triangles
+      const adjTriangleNode = node.getAdjacentTriangleNode(edge);
+      const adjTriangleVertex = adjTriangleNode.triangle.getOppositeVertex(edge);
+      const t1 = new TriangleSearchTreeNode(new Triangle(p, this.triangle.v1, adjTriangleVertex));
+      const t2 = new TriangleSearchTreeNode(new Triangle(p, this.triangle.v2, adjTriangleVertex));
+
+      // update search structure
+      adjTriangleNode.flipped(t1, t2);
+      node.flipped(t1, t2);
+
+      // update adjacent triangles
+      const adjT1 = node.getAdjacentTriangleNode(new Edge(p, this.triangle.v1));
+      const adjT2 = node.getAdjacentTriangleNode(new Edge(p, this.triangle.v2));
+      const adjT3 = adjTriangleNode.getAdjacentTriangleNode(new Edge(this.triangle.v1, adjTriangleVertex));
+      const adjT4 = adjTriangleNode.getAdjacentTriangleNode(new Edge(this.triangle.v2, adjTriangleVertex));
+
+      t1.setAdjacentTriangleNodes(t2, adjT1, adjT3);
+      adjT1.replaceAdjTriangle(node, t1);
+      adjT2.replaceAdjTriangle(node, t2);
+      t2.setAdjacentTriangleNodes(t1, adjT2, adjT4);
+      adjT3.replaceAdjTriangle(adjTriangleNode, t1);
+      adjT3.replaceAdjTriangle(adjTriangleNode, t2);
+    }
+  }
+
+
+  flipped(node1, node2) {
+    this.deleted = true;
+    this.descendants = [node1, node2]
+  }
+
+  setAdjacentTriangleNodes(n1, n2, n3) {
+    this.adjacentTriangleNodes = [n1, n2, n3];
+  }
+
+  /** Get adjacentTriangle search tree node given edge */
+  getAdjacentTriangleNode(edge) {
+    for (let i = 0; i < this.adjacentTriangleNodes.length; i++) {
+      const node = this.adjacentTriangleNodes[i];
+      if (!(node instanceof TriangleSearchTreeNode)) continue;
+      const triangle = node.triangle;
+
+      if (triangle.edges.some(e => e.equals(edge))) {  // check if edge in triangle
+        return node;
+      }
+    }
+    return null;
+  }
+
+  /** Returns triangle which contains the point p */
   getTriangleNodeContaining(p, coordList) {
     if (coordList[p].isInTriangle(this.triangle, coordList)) {
       if (this.deleted) { // recurse through descendants
@@ -126,24 +212,21 @@ class TriangleSearchTreeNode {
     } else return false; 
   }
 
-  /**
-   * Returns the TriangleSearchTreeNodes of adjacent triangles by using the parent
-   */
-  getAdjacentTriangleNodes(edge) {
-    // check for edge
-    if (edge[0].isInTriangle(this.triangle)) {
-      for (let j = 0; j < edges.length; j++) {
-        if (this.deleted) {
-          // recurse 
-          adjacentTriangles = [];
-          for (let i = 0; i < this.descendants.length; i++) {
-            adjacentTriangles.concat(this.descendants[i].getAdjacentTriangleNodes(edge));
-          }
-          return adjacentTriangles;
-        } else {
-          return [this];
-        }
-      }
+  /** Check if edge is legal. */
+  isIllegal(edge, coordList) {
+    const v1 = edge.u;
+    const v2 = this.triangle.getOppositeVertex(edge);
+    const v3 = edge.v;
+
+    const adjTriangleNode = this.getAdjacentTriangleNode(edge);
+    if (adjTriangleNode == null) return false;
+
+    const v4 = adjTriangleNode.triangle.getOppositeVertex(edge);
+
+    if (isStoredCounterClockWise(v1, v2, v3, coordList)) {
+      return (circumCircleContains(v1, v2, v3, v4, coordList));
+    } else {
+      return (circumCircleContains(v3, v2, v1, v4, coordList));
     }
   }
 }
@@ -175,6 +258,7 @@ function getDelaunayTriangulationIncremental(P) {
   const [topLeftCoordinate, topRightCoordinate, bottomCoordinate] = boundingTriangleCoords;
   const coordList = P.concat(boundingTriangleCoords);
 
+  // get large triangle edges in coordinates (so not Edge object)
   largeTriangleEdges = [
     [topLeftCoordinate, topRightCoordinate], 
     [topRightCoordinate, bottomCoordinate], 
@@ -192,11 +276,34 @@ function getDelaunayTriangulationIncremental(P) {
 
   // start incremental construction
   // create search structure
-  let S = new TriangleSearchTreeNode([P.length, P.length+1, P.length+2])
+  let S = new TriangleSearchTreeNode(new Triangle(P.length, P.length+1, P.length+2))
+  S.setAdjacentTriangleNodes("outside1", "outside2", "outside3");
 
   for (let i = 0; i < P.length; i++) {
+    // INSERT(i, S)
     const enclosingTriangle = S.getTriangleNodeContaining(i, coordList);
-    enclosingTriangle.split(i);
+    const desc = enclosingTriangle.split(i, coordList);
+    let triangles = getTriangles(S);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawTriangles(triangles, coordList);
+
+    const t1 = desc[0];
+    const t2 = desc[1];
+    const t3 = desc[2];
+    const e1 = desc[3];
+    const e2 = desc[4];
+    const e3 = desc[5];
+    const p = desc[6];
+
+    // check for needed flips
+    enclosingTriangle.legalize(t1, e1, p, coordList);
+    enclosingTriangle.legalize(t2, e2, p, coordList);
+    enclosingTriangle.legalize(t3, e3, p, coordList);
+    
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawTriangles(triangles, coordList);
+
+    console.log(i);
   }
 
   let triangles = getTriangles(S);
