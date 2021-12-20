@@ -1,6 +1,7 @@
 
 let pixels = undefined;
 let output = undefined;
+let data   = undefined;
 
 /**
  * Returns array of k colors present in image.
@@ -11,13 +12,22 @@ let output = undefined;
  * Implementation: Martijn
  * Requires that k is a power of two.
  */
-function quantize(data, k) {
+function quantize(imageData, k) {
+
+    data = imageData;
+
     /* Create an array of pixel indices. */
     pixels = Array.from(Array(data.length >> 2).keys());
 
     output = Array(0);
-    cut(0, pixels.length, data, 16);
+    cut(0, pixels.length, k);
+
+    /* Output now should contain k colours. */
+    /* Time to find which colour is closest. */
+    let CC = Array(pixels.length).fill(0).map(findNearestColour);
+
     return output;
+
 }
 
 /**
@@ -25,10 +35,9 @@ function quantize(data, k) {
  * i.e. generate k colours from pixels[i:j].
  * @param {Number} i
  * @param {Number} j
- * @param {Array} data
  * @param {Number} k
  */
-function cut(i, j, data, k) {
+function cut(i, j, k) {
 
     /* Base case. */
     if (k == 1) {
@@ -49,15 +58,15 @@ function cut(i, j, data, k) {
 
     /* Not base case. */
     /* First, find which colour component has the greatest range. */
-    let C = getLargestComponent(i, j, data);
+    let C = getLargestComponent(i, j);
 
     /* Save the last value in pixels[i:j], to restore it later. */
-    /* It might be that this value is in multiple intervals,
-       so it needs to be restored before returning. */
+    /* It might be that this value is in multiple intervals, */
+    /* so it needs to be restored before returning. */
     let last_pixel = pixels[j-1];
 
     /* Sort pixels[i:j] by the largest component. */
-    sortRange(i, j, data, C);
+    sortRange(i, j, C);
 
     /* Get the median. */
     let medl = undefined, medr = undefined;
@@ -71,18 +80,21 @@ function cut(i, j, data, k) {
         medl = medr = i + ((j - i + 1) >> 1);
     }
 
-    cut(i, medl, data, k >> 1);
-    cut(medr, j, data, k >> 1);
+    /* Recurse. */
+    cut(i, medl, k >> 1);
+    cut(medr, j, k >> 1);
 
     /* Restore the value of pixels[j-1]. */
     pixels[j-1] = last_pixel;
 }
 
-function getLargestComponent(i, j, data) {
+function getLargestComponent(i, j) {
 
     let Rmin = 255, Rmax = 0;
     let Gmin = 255, Gmax = 0;
     let Bmin = 255, Bmax = 0;
+
+    /* Find the min/max value for each component. */
     for (let ii = i; ii < j; ii++) {
         let idx = 4*pixels[ii];
 
@@ -94,7 +106,6 @@ function getLargestComponent(i, j, data) {
 
         Bmin = Math.min(Bmin, data[idx+2]);
         Bmax = Math.max(Bmax, data[idx+2]);
-
     }
 
     let Rrange = Rmax - Rmin;
@@ -107,8 +118,31 @@ function getLargestComponent(i, j, data) {
 
 }
 
-function sortRange(i, j, data, C) {
+function sortRange(i, j, C) {
 
     pixels.splice(i, j-i, ...pixels.slice(i,j).sort((a,b) => data[4*a+C] - data[4*b+C]));
 
+}
+
+/**
+ * Find which colour in `output` is the closest to the `index`th colour in the image.
+ * @param {Number} element   Don't care about this ;)
+ * @param {Number} index     The index in the original array, i.e. the how-manieth colour.
+ */
+function findNearestColour(element, index) {
+    let [R, G, B] = data.slice(4*index, 4*index + 4);
+
+    let minDistance = Infinity;
+    let minIndex = -1;
+
+    /* Find the closest colour in output. */
+    for (const [i, [oR, oG, oB]] of output.entries()) {
+        let distance = (R - oR)**2 + (G - oG)**2 + (B - oB)**2;
+        if (distance < minDistance) {
+            minDistance = distance;
+            minIndex = i;
+        }
+    }
+
+    return minIndex;
 }
