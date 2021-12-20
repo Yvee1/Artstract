@@ -284,9 +284,6 @@ function getDelaunayTriangulationIncremental(P) {
     // INSERT(i, S)
     const enclosingTriangle = S.getTriangleNodeContaining(i, coordList);
     const desc = enclosingTriangle.split(i, coordList);
-    let triangles = getTriangles(S);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawTriangles(triangles, coordList);
 
     const t1 = desc[0];
     const t2 = desc[1];
@@ -301,13 +298,11 @@ function getDelaunayTriangulationIncremental(P) {
     t2.legalize(e2, p, coordList);
     t3.legalize(e3, p, coordList);
     
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawTriangles(triangles, coordList);
-
     console.log(i);
   }
 
   let triangles = getTriangles(S);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
   drawTriangles(triangles, coordList);
 
   // start Delaunay
@@ -315,26 +310,4 @@ function getDelaunayTriangulationIncremental(P) {
   const coords = P.flatMap(c => [c.x, c.y]);
   const delaunay = new Delaunator(coords);
   return delaunay;
-}
-
-/**
- * 
- * @param {Coordinate} p 
- * @param {Array<Coordinate>} T 
- */
-function insert(p, T) {
-  return;
-}
-
-/**
- * Legalizes edge (pi, pj) if illegal.
- * @param {Coordinate} pr 
- * @param {Coordinate} pi 
- * @param {Coordinate} pj 
- * @param {Array<Coordinate>} T 
- * 
- * Implementation: Tristan
- */
-function legalizeEdge(pr, pi, pj, T) {
-  return T;
 }
