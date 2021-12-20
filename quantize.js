@@ -45,14 +45,14 @@ function cut(i, j, k) {
         /* Generate color based on pixels[i..j] */
         let R = 0, G = 0, B = 0;
         for (let ii = i; ii < j; ii++) {
-            let idx = 4*pixels[ii];
-            R += data[idx+0];
-            G += data[idx+1];
-            B += data[idx+2];
+            const idx = 4*pixels[ii];
+            R += data[idx+0]**2;
+            G += data[idx+1]**2;
+            B += data[idx+2]**2;
         }
-        R = (R / (j-i)) | 0;
-        G = (G / (j-i)) | 0;
-        B = (B / (j-i)) | 0;
+        R = Math.sqrt((R / (j-i))) | 0;
+        G = Math.sqrt((G / (j-i))) | 0;
+        B = Math.sqrt((B / (j-i))) | 0;
         output.push([R, G, B]);
         return
     }
