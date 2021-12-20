@@ -2,6 +2,7 @@
 let pixels = undefined;
 let output = undefined;
 let data   = undefined;
+const cDistFunc = colourDistanceEuclidean;
 
 /**
  * Returns array of k colors present in image.
@@ -24,7 +25,7 @@ function quantize(imageData, k) {
 
     /* Output now should contain k colours. */
     /* Time to find which colour is closest. */
-    let CC = Array(pixels.length).fill(0).map(findNearestColour);
+    const CC = Array(pixels.length).fill(0).map(findNearestColour);
 
     return output;
 
@@ -58,12 +59,12 @@ function cut(i, j, k) {
 
     /* Not base case. */
     /* First, find which colour component has the greatest range. */
-    let C = getLargestComponent(i, j);
+    const C = getLargestComponent(i, j);
 
     /* Save the last value in pixels[i:j], to restore it later. */
     /* It might be that this value is in multiple intervals, */
     /* so it needs to be restored before returning. */
-    let last_pixel = pixels[j-1];
+    const last_pixel = pixels[j-1];
 
     /* Sort pixels[i:j] by the largest component. */
     sortRange(i, j, C);
@@ -96,7 +97,7 @@ function getLargestComponent(i, j) {
 
     /* Find the min/max value for each component. */
     for (let ii = i; ii < j; ii++) {
-        let idx = 4*pixels[ii];
+        const idx = 4*pixels[ii];
 
         Rmin = Math.min(Rmin, data[idx+0]);
         Rmax = Math.max(Rmax, data[idx+0]);
@@ -108,9 +109,9 @@ function getLargestComponent(i, j) {
         Bmax = Math.max(Bmax, data[idx+2]);
     }
 
-    let Rrange = Rmax - Rmin;
-    let Grange = Gmax - Gmin;
-    let Brange = Bmax - Bmin;
+    const Rrange = Rmax - Rmin;
+    const Grange = Gmax - Gmin;
+    const Brange = Bmax - Bmin;
 
     if (Rrange >= Grange && Rrange >= Brange) { return 0; }
     if (Grange >= Rrange && Grange >= Brange) { return 1; }
@@ -130,14 +131,14 @@ function sortRange(i, j, C) {
  * @param {Number} index     The index in the original array, i.e. the how-manieth colour.
  */
 function findNearestColour(element, index) {
-    let [R, G, B] = data.slice(4*index, 4*index + 4);
+    const RGB = data.slice(4*index, 4*index + 4);
 
     let minDistance = Infinity;
     let minIndex = -1;
 
     /* Find the closest colour in output. */
-    for (const [i, [oR, oG, oB]] of output.entries()) {
-        let distance = (R - oR)**2 + (G - oG)**2 + (B - oB)**2;
+    for (const [i, oRGB] of output.entries()) {
+        const distance = cDistFunc(RGB, oRGB);
         if (distance < minDistance) {
             minDistance = distance;
             minIndex = i;
@@ -145,4 +146,10 @@ function findNearestColour(element, index) {
     }
 
     return minIndex;
+}
+
+function colourDistanceEuclidean(c1, c2) {
+    const [ R,  G,  B] = c1;
+    const [oR, oG, oB] = c2;
+    return (R - oR)**2 + (G - oG)**2 + (B - oB)**2;
 }
