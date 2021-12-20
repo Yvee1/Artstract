@@ -25,10 +25,13 @@ function quantize(imageData, k) {
 
     /* Output now should contain k colours. */
     /* Time to find which colour is closest. */
-    const CC = Array(pixels.length).fill(0).map(findNearestColour);
+    /* TODO: instead of index, add position. */
+    const CC = [...Array(pixels.length)].map(findNearestColour).reduce(
+        (pv, cv, idx) => { pv[cv].push(idx); return pv; },
+        [...Array(output.length)].map(a => [])
+    );
 
-    return output;
-
+    return CC;
 }
 
 /**
