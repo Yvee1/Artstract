@@ -143,32 +143,36 @@ class TriangleSearchTreeNode {
     }
   }
 
-  legalize(node, edge, p, coordList) {
-    if (node.isIllegal(edge, coordList)) {
+  legalize(edge, p, coordList) {
+    if (this.isIllegal(edge, coordList)) {
       // flip 
      
       // create new triangles
-      const adjTriangleNode = node.getAdjacentTriangleNode(edge);
+      const adjTriangleNode = this.getAdjacentTriangleNode(edge);
       const adjTriangleVertex = adjTriangleNode.triangle.getOppositeVertex(edge);
       const t1 = new TriangleSearchTreeNode(new Triangle(p, edge.u, adjTriangleVertex));
       const t2 = new TriangleSearchTreeNode(new Triangle(p, edge.v, adjTriangleVertex));
 
       // update search structure
       adjTriangleNode.flipped(t1, t2);
-      node.flipped(t1, t2);
+      this.flipped(t1, t2);
 
       // update adjacent triangles
-      const adjT1 = node.getAdjacentTriangleNode(new Edge(p, edge.u));
-      const adjT2 = node.getAdjacentTriangleNode(new Edge(p, edge.v));
+      const adjT1 = this.getAdjacentTriangleNode(new Edge(p, edge.u));
+      const adjT2 = this.getAdjacentTriangleNode(new Edge(p, edge.v));
       const adjT3 = adjTriangleNode.getAdjacentTriangleNode(new Edge(edge.u, adjTriangleVertex));
       const adjT4 = adjTriangleNode.getAdjacentTriangleNode(new Edge(edge.v, adjTriangleVertex));
 
       t1.setAdjacentTriangleNodes(t2, adjT1, adjT3);
-      if (adjT1 != null) adjT1.replaceAdjTriangle(node, t1);
-      if (adjT2 != null) adjT2.replaceAdjTriangle(node, t2);
+      if (adjT1 != null) adjT1.replaceAdjTriangle(this, t1);
+      if (adjT2 != null) adjT2.replaceAdjTriangle(this, t2);
       t2.setAdjacentTriangleNodes(t1, adjT2, adjT4);
       if (adjT3 != null) adjT3.replaceAdjTriangle(adjTriangleNode, t1);
       if (adjT4 != null) adjT4.replaceAdjTriangle(adjTriangleNode, t2);
+
+      // recursively call legalize
+      t1.legalize(new Edge(edge.u, adjTriangleVertex), p, coordList);
+      t2.legalize(new Edge(edge.v, adjTriangleVertex), p, coordList);
     }
   }
 
@@ -293,9 +297,9 @@ function getDelaunayTriangulationIncremental(P) {
     const p = desc[6];
 
     // check for needed flips
-    enclosingTriangle.legalize(t1, e1, p, coordList);
-    enclosingTriangle.legalize(t2, e2, p, coordList);
-    enclosingTriangle.legalize(t3, e3, p, coordList);
+    t1.legalize(e1, p, coordList);
+    t2.legalize(e2, p, coordList);
+    t3.legalize(e3, p, coordList);
     
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawTriangles(triangles, coordList);
