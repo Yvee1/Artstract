@@ -13,7 +13,7 @@ const options = {
   showPolygons: true,
   showTriangles: false,
 }
-const alphaController = gui.add(options, 'alpha', 1, 100);
+const alphaController = gui.add(options, 'alpha', 1, 200);
 alphaController.onChange(() => drawStuff());
 
 const debugController = gui.add(options, 'debug');
@@ -140,7 +140,19 @@ function drawStuff() {
     }
 
     if (options.showTriangles){
-      // TODO
+      for (let i = 0; i < del.length; i+=3){
+        ctx.lineWidth = 1;
+        ctx.fillStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]}, 1.0)`;
+        // ctx.strokeStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]}, 1.0)`;
+        ctx.strokeStyle = "black";
+        ctx.beginPath();
+        ctx.moveTo(coordList[del[i]].x, coordList[del[i]].y);
+        for (let j = 1; j < 4; j++){
+          ctx.lineTo(coordList[del[i + (j%3)]].x, coordList[del[i + (j%3)]].y);
+        }
+        ctx.fill();
+        ctx.stroke();
+      }
     }
 
     if (options.showPolygons){
