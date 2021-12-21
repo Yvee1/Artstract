@@ -8,6 +8,22 @@ fakeButton.addEventListener("click", () => {
 
 realUploadButton.addEventListener("change", e => handleImageFile(e.target.files[0]));
 
+const target = document.getElementById('drag-and-drop-target');
+
+target.addEventListener('drop', (e) => {
+  e.stopPropagation();
+  e.preventDefault();
+
+  handleImageFile(e.dataTransfer.files[0]);
+});
+
+target.addEventListener('dragover', (e) => {
+  e.stopPropagation();
+  e.preventDefault();
+
+  e.dataTransfer.dropEffect = 'copy';
+});
+
 function handleImageFile(file){
   // Create file reader for reading image file
   const reader = new FileReader();
