@@ -87,6 +87,33 @@ class Triangle {
     this.edges = this.getEdges();
   }
 
+  /** TODO: Code from SO. */
+  liesOnEdge(edge, p, coordList) {
+    const p1 = coordList[edge.u];
+    const p2 = coordList[edge.v];
+
+    const testPoint = coordList[p];
+    const dxc = testPoint.x - p1.x;
+    const dyc = testPoint.y - p1.y;
+
+    const dxl = p2.x - p1.x;
+    const dyl = p2.y - p1.y;
+
+    const cross = dxc * dyl - dyc * dxl;
+
+    return (cross === 0)
+  }
+
+  getTriangleEdgeIfOnEdge(p, coordList) {
+    for (let i = 0; i < this.edges.length; i++) {
+      const edge = this.edges[i];
+      if (this.liesOnEdge(edge, p, coordList)) {
+        return edge;
+      }
+    }
+    return null;
+  }
+
   getEdges() {
     return [
       new Edge(this.v1, this.v2),

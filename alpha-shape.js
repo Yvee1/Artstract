@@ -17,7 +17,7 @@ function getAlphaShape(del, coords, alpha) {
   // Assumption: for every triangle the vertices are in counter-clockwise order.
 
   // Shorthand
-  const triangles = del.triangles;
+  const triangles = del;
 
   // We will filter the triangles based on alpha, and determine the perimeter edges of the resulting triangulation(s).
   const allEdges = [];

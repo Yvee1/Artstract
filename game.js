@@ -84,8 +84,15 @@ function drawStuff() {
   // Draw points
   // drawPoints(fewerPoints);
 
-  const coordList = fewerPoints.map(p => p.pos);
-  const del = options.debug ? getDelaunayTriangulationIncremental(coordList) : getDelaunayTriangulation(coordList);
+  let coordList = fewerPoints.map(p => p.pos);
+  let del;
+  if (options.debug) {
+    const output = getDelaunayTriangulationIncremental(coordList);
+    del = output[0];
+    coordList = output[1];
+  } else {
+    del = getDelaunayTriangulation(coordList);
+  }
 
   // Draw triangulation
   // for (let i = 0; i < del.triangles.length; i += 3) {
