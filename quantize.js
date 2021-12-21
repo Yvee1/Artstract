@@ -6,16 +6,15 @@ const cDistFunc = colourDistanceEuclidean;
 
 /**
  * Returns array of k colors present in image.
- * @param {Element} image
+ * @param {Array} pts
  * @param {Number} k
  * @return {Array} colors
  *
  * Implementation: Martijn
  * Requires that k is a power of two.
  */
-function quantize(imageData, k) {
-
-    data = imageData;
+function quantize(pts, k) {
+    data = imageDataFromPoints(pts);
 
     /* Create an array of pixel indices. */
     pixels = Array.from(Array(data.length >> 2).keys());
@@ -27,7 +26,7 @@ function quantize(imageData, k) {
     /* Time to find which colour is closest. */
     /* TODO: instead of index, add position. */
     const CC = [...Array(pixels.length)].map(findNearestColour).reduce(
-        (pv, cv, idx) => { pv[cv].push(idx); return pv; },
+        (pv, cv, idx) => { pv[cv].push(pts[idx]); return pv; },
         [...Array(output.length)].map(a => [])
     );
 

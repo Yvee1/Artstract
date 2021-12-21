@@ -395,7 +395,9 @@ function getDelaunayTriangulationIncremental(P) {
   for (let i = 0; i < P.length; i++) {
     // INSERT(i, S)
     const enclosingTriangle = S.getTriangleNodeContaining(i, coordList);
-    enclosingTriangle.split(i, coordList);
+    if (enclosingTriangle){
+      enclosingTriangle.split(i, coordList);
+    }
   }
 
   // let triangles = getTrianglesIterative(S);
