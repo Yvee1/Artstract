@@ -51,6 +51,19 @@ body {
 }
 
 #game-title {
-    font-size: 2.5em;
+    font-size: 2.8em;
     padding: 1em;
+    /* text-shadow: 0 0 1px #ff0000; */
+    /* -webkit-text-stroke: 1px white;
+    text-shadow:
+   -4px -4px 0 #fff,  
+    4px -4px 0 #fff,
+    -4px 4px 0 #fff,
+     4px 4px 0 #fff; */
+     /* -webkit-text-stroke: 1px red; */
+    text-shadow:
+   -2px -2px 2px white,  
+    2px -2px 2px white,
+    -2px 2px 2px white,
+     2px 2px 2px white;
 }

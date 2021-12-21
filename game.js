@@ -1,6 +1,6 @@
 const canvas = document.getElementById("pixi-canvas");
 const ctx = canvas.getContext('2d');
-
+let startScreen = true;
 let image, w, h, xoff, yoff, points, fewerPoints, groupedPoints = undefined
 const gui = new dat.GUI({name: 'Artstract GUI'});
 const options = {
@@ -113,6 +113,7 @@ function imageDataFromPoints(points){
 }
 
 function drawArt() {
+  ctx.setLineDash([]);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   if (options.showImage){
@@ -195,3 +196,49 @@ function drawArt() {
     drawPoints(fewerPoints);
   }
 }
+
+class Line {
+  constructor(x){
+    // Start and end x-positions of the line
+    this.sx = x + (Math.random()-0.5)*20.0;
+    this.ex = x + 150.0 + (Math.random()-0.5)*20.0;
+    
+    this.c1x = x+65 + (Math.random()-0.5)*20.0;
+    this.c1y = canvas.height/3.0;
+    this.c2x = x+60 + (Math.random()-0.5)*20.0;
+    this.c2y = canvas.height/3.0*2.0;
+  }
+
+  draw(time){
+    ctx.beginPath();
+    ctx.moveTo(this.sx, 0);
+    ctx.bezierCurveTo(this.c1x + Math.sin(time/1000 + this.sx)*10, this.c1y, this.c2x, this.c2y, this.ex, canvas.height);
+    ctx.stroke();
+  }
+}
+
+let lines;
+
+function drawStartScreen(){
+  lines = [];
+  for (let x = -canvas.width; x < canvas.width; x+=40){
+    const line = new Line(x);
+    lines.push(line);
+  }
+  animateStartScreen();
+}
+
+function animateStartScreen(){
+  if (startScreen){
+  const now = new Date().getTime();
+
+  ctx.setLineDash([5, 5]);
+  ctx.lineDashOffset = (now/40) % 10;
+  ctx.fillStyle = "#fdfffd";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  lines.forEach(line => line.draw(now));
+    window.requestAnimationFrame(animateStartScreen);
+  }
+}
+
+drawStartScreen();
