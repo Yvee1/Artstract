@@ -94,7 +94,6 @@ function shuffleArray(array) {
   }
 }
 
-
 /**
  * Class for search structure in Delaunay triangulation. 
  */
@@ -307,6 +306,57 @@ function getTriangles(node, traversedNodes = []) {
   }
 }
 
+function getTrianglesIterative(root){
+  const triangles = [];
+  const traversedNodes = [];
+  
+  const stack = [root];
+  while (stack.length > 0){
+    const node = stack.pop();
+    if (traversedNodes.includes(node)){ continue };
+    traversedNodes.push(node);
+    if (!node.deleted){
+      triangles.push(node.triangle);
+      continue;
+    }
+    for (let i = 0; i < node.descendants.length; i++){
+      stack.push(node.descendants[i]);
+    }
+  }
+
+  return triangles;
+}
+
+function getTrianglesAdjacent(root){
+  const triangles = [];
+  let node = root;
+  while (node.deleted){
+    node = node.descendants[0];
+  }
+
+  const seenNodes = [];
+  seenNodes.push(node);
+
+  const stack = [node];
+  while (stack.length > 0){
+    const current = stack.pop();
+    triangles.push(current.triangle);
+
+    for (let i = 0; i < current.adjacentTriangleNodes.length; i++){
+      const adj = current.adjacentTriangleNodes[i];
+      if (adj.deleted){
+        console.log("Hmm.");
+        continue;
+      }
+      if (seenNodes.includes(adj)){
+        continue;
+      }
+      stack.push(adj);
+      seenNodes.push(adj);
+    }
+  }
+  return triangles;
+}
 
 /**
  * Returns edges to draw Delaunay triangulation.
@@ -315,7 +365,7 @@ function getTriangles(node, traversedNodes = []) {
  * Implementation: Tristan
  */
 function getDelaunayTriangulationIncremental(P) {
-  shuffleArray(P); // shuffle in place
+  // shuffleArray(P); // shuffle in place
   const boundingTriangleCoords = getBoundingTriangle(P);
   const [topLeftCoordinate, topRightCoordinate, bottomCoordinate] = boundingTriangleCoords;
   const coordList = P.concat(boundingTriangleCoords);
@@ -328,13 +378,13 @@ function getDelaunayTriangulationIncremental(P) {
   ];
 
   // draw bounding triangle
-  largeTriangleEdges.forEach(edge => {
-    ctx.fillStyle = 'black';
-    ctx.beginPath();
-    ctx.moveTo(edge[0].x, edge[0].y);
-    ctx.lineTo(edge[1].x, edge[1].y);
-    ctx.stroke();
-  });
+  // largeTriangleEdges.forEach(edge => {
+  //   ctx.fillStyle = 'black';
+  //   ctx.beginPath();
+  //   ctx.moveTo(edge[0].x, edge[0].y);
+  //   ctx.lineTo(edge[1].x, edge[1].y);
+  //   ctx.stroke();
+  // });
 
   const containingTriangle = [P.length, P.length+1, P.length+2]
 
@@ -348,11 +398,13 @@ function getDelaunayTriangulationIncremental(P) {
     enclosingTriangle.split(i, coordList);
   }
 
-  let triangles = getTriangles(S);
-  // change triangles to desired format
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  drawTriangles(triangles, coordList);
+  // let triangles = getTrianglesIterative(S);
+  let triangles = getTrianglesAdjacent(S);
 
+  // ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // drawTriangles(triangles, coordList);
+
+  // change triangles to desired format
   let delaunayTriangles = [];
   triangles.forEach(triangle => {
     // check for large triangle

@@ -4,14 +4,20 @@ let image = undefined
 let points = undefined
 const gui = new dat.GUI({name: 'Artstract GUI'});
 const options = {
-  alpha: 15.0,
-  debug: false,
+  alpha: 35.0,
+  debug: true,
+  offset: 10.0
 }
-const alphaController = gui.add(options, 'alpha');
+const alphaController = gui.add(options, 'alpha', 1, 100);
 alphaController.onChange(() => drawStuff());
 
 const debugController = gui.add(options, 'debug');
+debugController.name("use our Delaunay")
 debugController.onChange(() => drawStuff());
+
+const offsetController = gui.add(options, 'offset', 5, 20, 1);
+offsetController.onChange(() => { computePointsFromImage(); drawStuff() });
+
 const r = 3;
 
 /**
@@ -61,7 +67,8 @@ function computePointsFromImage() {
   const imgData = imgCtx.getImageData(0, 0, w, h).data;
 
   // Go through the pixels, making jumps of 5, sample the colors and draw circles.
-  const off = 5;
+  const off = options.offset;
+  console.log(off);
   points = new Array(Math.ceil(w/off) * Math.ceil(h/off));
   let i = 0;
 
@@ -74,6 +81,7 @@ function computePointsFromImage() {
       i++;
     }
   }
+  shuffleArray(points);
 }
 
 function drawStuff() {
@@ -110,8 +118,8 @@ function drawStuff() {
   alphaTriangles.forEach(polygon => {
     const firstPoint = fewerPoints[polygon[0]];
     ctx.lineWidth = 1;
-    ctx.fillStyle = `rgb(${firstPoint.color.r}, ${firstPoint.color.g}, ${firstPoint.color.b}, 1.0)`;
-    ctx.strokeStyle = `rgb(${firstPoint.color.r}, ${firstPoint.color.g}, ${firstPoint.color.b}, 1.0)`;
+    ctx.fillStyle = `rgb(${firstPoint.color.r}, ${firstPoint.color.g}, ${firstPoint.color.b}, 0.5)`;
+    ctx.strokeStyle = `rgb(${firstPoint.color.r}, ${firstPoint.color.g}, ${firstPoint.color.b}, 0.5)`;
     ctx.beginPath();
     ctx.moveTo(coordList[polygon[0]].x, coordList[polygon[0]].y);
     for (let i = 1; i < polygon.length+1; i++){
