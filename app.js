@@ -24,6 +24,14 @@ target.addEventListener('dragover', (e) => {
   e.dataTransfer.dropEffect = 'copy';
 });
 
+target.addEventListener('dragenter', (e) => {
+  target.classList.add('dragover')
+});
+
+target.addEventListener('dragleave', (e) => {
+  target.classList.remove('dragover')
+});
+
 function handleImageFile(file){
   // Create file reader for reading image file
   const reader = new FileReader();
@@ -38,6 +46,7 @@ function handleImageFile(file){
     // Remove start menu GUI
     fakeButton.remove();
     gameTitle.remove();
+    target.remove();
   }
 
   // Can be used in the future for showing a progress indicator for loading the image; currently prints to console.
