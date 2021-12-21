@@ -12,31 +12,36 @@ const options = {
   showPoints: false,
   showPolygons: true,
   showTriangles: false,
+  showImage: true,
 }
+const offsetController = gui.add(options, 'offset', 5, 20, 1);
+offsetController.onChange(() => { computePointsFromImage(); drawArt() });
+
+const dropoutController = gui.add(options, 'dropout', 0.0, 1.0);
+dropoutController.onChange(() => { computePointsFromImage(); drawArt() });
+
+const kController = gui.add(options, 'k', 1, 128, 1)
+kController.name("#colors (2^k)")
+kController.onChange(() => { computePointsFromImage(); drawArt() });
+
 const alphaController = gui.add(options, 'alpha', 1, 200);
-alphaController.onChange(() => drawStuff());
+alphaController.onChange(() => drawArt());
 
 const debugController = gui.add(options, 'debug');
 debugController.name("use our Delaunay")
-debugController.onChange(() => drawStuff());
-
-const offsetController = gui.add(options, 'offset', 5, 20, 1);
-offsetController.onChange(() => { computePointsFromImage(); drawStuff() });
-
-const dropoutController = gui.add(options, 'dropout', 0.0, 1.0);
-dropoutController.onChange(() => { computePointsFromImage(); drawStuff() });
-
-const kController = gui.add(options, 'k', 1, 128, 1)
-kController.onChange(() => { computePointsFromImage(); drawStuff() });
+debugController.onChange(() => drawArt());
 
 const showPointsController = gui.add(options, 'showPoints')
-showPointsController.onChange(() => { drawStuff() });
+showPointsController.onChange(() => { drawArt() });
 
 const showPolygonsController = gui.add(options, 'showPolygons')
-showPolygonsController.onChange(() => { drawStuff() });
+showPolygonsController.onChange(() => { drawArt() });
 
 const showTrianglesController = gui.add(options, 'showTriangles')
-showTrianglesController.onChange(() => { drawStuff() });
+showTrianglesController.onChange(() => { drawArt() });
+
+const showImageController = gui.add(options, 'showImage')
+showImageController.onChange(() => { drawArt() });
 
 const r = 3;
 
@@ -50,15 +55,6 @@ const r = 3;
  */
 function getColorPalette(image, k) {
   return [[0,0,0]];
-}
-
-/**
- * Draws art to canvas.
- * 
- * Implementation: Martijn
- */
-function drawArt() {
-
 }
 
 function drawPoints(points){
@@ -84,9 +80,9 @@ function computePointsFromImage() {
   // Draw the image on the canvas
   xoff = (canvas.width-w)/2;
   yoff = (canvas.height-h)/2
-  imgCtx.drawImage(image, xoff, yoff, w, h);
+  imgCtx.drawImage(image, 0, 0, w, h);
   // Get pixel data of canvas, and thus of the image
-  const imgData = imgCtx.getImageData(xoff, yoff, w, h).data;
+  const imgData = imgCtx.getImageData(0, 0, w, h).data;
 
   // Go through the pixels, making jumps of 5, sample the colors and draw circles.
   const off = options.offset;
@@ -116,12 +112,15 @@ function imageDataFromPoints(points){
   return imgData;
 }
 
-function drawStuff() {
+function drawArt() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-  ctx.save();
-  ctx.globalAlpha = 0.4;
-  ctx.drawImage(image, xoff, yoff, w, h);
-  ctx.restore();
+
+  if (options.showImage){
+    ctx.save();
+    ctx.globalAlpha = 0.4;
+    ctx.drawImage(image, xoff, yoff, w, h);
+    ctx.restore();
+  }
 
   // console.log(output);
 
