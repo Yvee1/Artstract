@@ -2,59 +2,56 @@ const canvas = document.getElementById("pixi-canvas");
 const ctx = canvas.getContext('2d');
 let startScreen = true;
 let image, w, h, xoff, yoff, points, fewerPoints, groupedPoints = undefined
-const gui = new dat.GUI({name: 'Artstract GUI'});
-const options = {
-  alpha: 60.0,
-  debug: true,
-  offset: 10.0,
-  dropout: 0.6,
-  k: 16,
-  showPoints: false,
-  showPolygons: true,
-  showTriangles: false,
-  showImage: true,
-}
-const offsetController = gui.add(options, 'offset', 5, 20, 1);
-offsetController.onChange(() => { computePointsFromImage(); drawArt() });
-
-const dropoutController = gui.add(options, 'dropout', 0.0, 1.0);
-dropoutController.onChange(() => { computePointsFromImage(); drawArt() });
-
-const kController = gui.add(options, 'k', 1, 128, 1)
-kController.name("#colors (2^k)")
-kController.onChange(() => { computePointsFromImage(); drawArt() });
-
-const alphaController = gui.add(options, 'alpha', 1, 200);
-alphaController.onChange(() => drawArt());
-
-const debugController = gui.add(options, 'debug');
-debugController.name("use our Delaunay")
-debugController.onChange(() => drawArt());
-
-const showPointsController = gui.add(options, 'showPoints')
-showPointsController.onChange(() => { drawArt() });
-
-const showPolygonsController = gui.add(options, 'showPolygons')
-showPolygonsController.onChange(() => { drawArt() });
-
-const showTrianglesController = gui.add(options, 'showTriangles')
-showTrianglesController.onChange(() => { drawArt() });
-
-const showImageController = gui.add(options, 'showImage')
-showImageController.onChange(() => { drawArt() });
+let gui, options;
 
 const r = 3;
 
-/**
- * Returns array of k colors present in image.
- * @param {Element} image 
- * @param {Number} k
- * @return {Array} colors
- * 
- * Implementation: Martijn
- */
-function getColorPalette(image, k) {
-  return [[0,0,0]];
+function createGUI(){
+  gui = new dat.GUI({name: 'Artstract GUI'});
+  options = {
+    alpha: 60.0,
+    offset: 10.0,
+    dropout: 0.6,
+    k: 16,
+    showPoints: false,
+    showPolygons: true,
+    showTriangles: false,
+    showImage: true,
+    debug: true,
+    showOutline: true,
+  }
+  offsetController = gui.add(options, 'offset', 5, 20, 1);
+  offsetController.onChange(() => { computePointsFromImage(); drawArt() });
+
+  dropoutController = gui.add(options, 'dropout', 0.0, 1.0);
+  dropoutController.onChange(() => { computePointsFromImage(); drawArt() });
+
+  kController = gui.add(options, 'k', 1, 128, 1)
+  kController.name("#colors (2^k)")
+  kController.onChange(() => { computePointsFromImage(); drawArt() });
+
+  alphaController = gui.add(options, 'alpha', 1, 200);
+  alphaController.onChange(() => drawArt());
+
+  showImageController = gui.add(options, 'showImage')
+  showImageController.onChange(() => { drawArt() });
+
+  gui.add(options, 'showOutline').onChange(() => { drawArt() });
+
+  debugFolder = gui.addFolder('Debug folder');
+
+  debugController = debugFolder.add(options, 'debug');
+  debugController.name("use our Delaunay")
+  debugController.onChange(() => drawArt());
+
+  showPointsController = debugFolder.add(options, 'showPoints')
+  showPointsController.onChange(() => { drawArt() });
+
+  showPolygonsController = debugFolder.add(options, 'showPolygons')
+  showPolygonsController.onChange(() => { drawArt() });
+
+  showTrianglesController = debugFolder.add(options, 'showTriangles')
+  showTrianglesController.onChange(() => { drawArt() });
 }
 
 function drawPoints(points){
@@ -159,6 +156,7 @@ function drawArt() {
       // Compute Alpha shape
       const alphaShape = getAlphaShape(del, coordList, options.alpha);
       const perimeterEdges = alphaShape[1];
+      const polygons = perimeterEdgesToPolygons(perimeterEdges);
       const alphaTriangles = alphaShape[0];
 
       // Draw inside of alpha shapes
@@ -175,19 +173,19 @@ function drawArt() {
         ctx.stroke();
       })
 
-      // Draw perimeter edges of alpha shape
-      perimeterEdges.forEach(edge => {
-        ctx.strokeStyle = 'black';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(coordList[edge[0]].x, coordList[edge[0]].y);
-        ctx.lineTo(coordList[edge[1]].x, coordList[edge[1]].y);
-        ctx.stroke();
-        // ctx.fillStyle = 'black';
-        // ctx.font = "10px Arial";
-        // ctx.fillText(edge[0], coordList[edge[0]].x, coordList[edge[0]].y); 
-        // ctx.fillText(edge[1], coordList[edge[1]].x, coordList[edge[1]].y); 
-      })
+      // Draw outline of alpha shapes
+      if (options.showOutline){
+        polygons.forEach(polygon => {
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = 'black';
+          ctx.beginPath();
+          ctx.moveTo(coordList[polygon[0]].x, coordList[polygon[0]].y);
+          for (let i = 1; i < polygon.length+1; i++){
+            ctx.lineTo(coordList[polygon[i%polygon.length]].x, coordList[polygon[i%polygon.length]].y);
+          }
+          ctx.stroke();
+        })
+      }
     }
   })
 

@@ -40,7 +40,12 @@ function handleImageFile(file){
   function doneLoading(event) {
     // Create image element with the image file, and attach function that is called when image is ready.
     const img = new Image();
-    img.onload = function(){ image = img; startScreen = false; computePointsFromImage(); drawArt() };
+    img.onload = function(){ 
+      image = img;
+      startScreen = false;
+      createGUI();
+      computePointsFromImage();
+      drawArt() };
     img.src = event.target.result;
 
     // Remove start menu GUI

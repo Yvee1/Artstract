@@ -7,27 +7,20 @@ function circumradius(p1, p2, p3) {
 }
 
 /**
- * Returns alpha-shape edges
- * @param {Array<Coordinate>} del - input set
- * @param {Number} alpha
+ * Returns alpha-shape triangles and perimeter edges
+ * @param {Array<Int>} triangles     - Delaunay triangulation represented by indices of points.
+ * @param {Array<Coordinate>} coords - List of coordinates of the points
+ * @param {Number} alpha             - Parameter alpha of the alpha-shape; as alpha -> infinity the alpha-shape approaches the convex hull.
  * 
  * Implementation: Steven
  */
-function getAlphaShape(del, coords, alpha) {
-  // Assumption: for every triangle the vertices are in counter-clockwise order.
-
-  // Shorthand
-  const triangles = del;
-
+function getAlphaShape(triangles, coords, alpha) {
   // We will filter the triangles based on alpha, and determine the perimeter edges of the resulting triangulation(s).
   const allEdges = [];
   const filteredTriangles = [];
 
   for (let i = 0; i < triangles.length; i+=3) {
     // Indices of the triangle vertices
-    // const t0 = triangles[i];
-    // const t1 = triangles[i+1];
-    // const t2 = triangles[i+2];
     const t = [triangles[i], triangles[i+1], triangles[i+2]].sort();
     // Coordinates of the triangle vertices
     const p1 = coords[t[0]];
@@ -41,29 +34,14 @@ function getAlphaShape(del, coords, alpha) {
       allEdges.push([t[0], t[1]]);
       allEdges.push([t[1], t[2]]);
       allEdges.push([t[0], t[2]]);
-      // // These are the edges of the triangle, we'll determine which are perimeter edges.
-      // const edges = [[t0, t1], [t1, t2], [t2, t0]];
-      // for (let i = 0; i < edges.length; i++) {
-      //   const edge = edges[i];
-      //   const flippedEdge = edge.slice().reverse();
-      //   // If this is the first time we encounter this edge (regardless of direction) it is a candidate perimeter edge.
-      //   if (!allEdges.some(e => (e[0] == edge[0] && e[1] == edge[1]) || (e[0] == flippedEdge[0] && e[1] == flippedEdge[1]))){
-      //     allEdges.push(edge);
-      //     perimeterEdges.push(edge);
-      //   } else { 
-      //     // An edge is a perimeter edge iff we encounter it exactly once. 
-      //     //So if we have encoutnered the edge before, it is no longer a candidate perimeter edge, therefore remove it.
-      //     perimeterEdges = perimeterEdges.filter(e => !(e[0] == edge[0] && e[1] == edge[1]) && !(e[0] == flippedEdge[0] && e[1] == flippedEdge[1]));
-      //   }
-      // }
     }
   }
 
-  // Lexicographic sort...
-  allEdges.sort((a, b) => (a[0] - b[0])*10000 + (a[1] - b[1]));
-  const perimeterEdges = [];
+  // Lexicographic sort
+  allEdges.sort((a, b) => a[0] == b[0] ? a[1] - b[1] : a[0] - b[0]);
 
-	
+  // Perimeter edges are the ones occurring only once in the allEdges array.
+  const perimeterEdges = [];
 	for (let i = 0; i < allEdges.length; i++){
     if (i == 0){
       if (allEdges[i][0] != allEdges[i+1][0] || allEdges[i][1] != allEdges[i+1][1]){
@@ -110,6 +88,11 @@ function perimeterEdgesToPolygons(edges){
     } else {
       mapping.set(edges[i][0], [edges[i][1]]);
     }
+    if (mapping.has(edges[i][1])){
+      mapping.get(edges[i][1]).push(edges[i][0]);
+    } else {
+      mapping.set(edges[i][1], [edges[i][0]]);
+    }
     remainingVertices.add(edges[i][0]);
   }
 
@@ -123,10 +106,15 @@ function perimeterEdgesToPolygons(edges){
     for (let i = 0; i < edges.length; i++){ // while(true) but just to prevent it going into an infinite loop in case of a mistake
       // Which vertices can be reached from current?
       const possibleNexts = mapping.get(current);
+      if (possibleNexts.length == 0){
+        break;
+      }
       // Get the one with the smallest angle; this is the one in the same polygon.
       const next = prev < 0 ? possibleNexts[0] : possibleNexts.reduce((acc, x) => ccwAngle(prev, current, x) < ccwAngle(prev, current, acc) ? x : acc);
       // Remove it from the list
       possibleNexts.splice(possibleNexts.indexOf(next), 1);
+      const nextPossibleNexts = mapping.get(next);
+      nextPossibleNexts.splice(nextPossibleNexts.indexOf(current), 1);
 
       polygon.push(next);
       remainingVertices.delete(current);
@@ -141,32 +129,3 @@ function perimeterEdgesToPolygons(edges){
   }
   return polygons;
 }
-
-// function pointInsidePolygon(point, poly){
-//   // TODO
-// }
-
-// function polygonsToNestedPolygons(polygons){
-//   const nestedPolygons = [];
-//   const inner = new Set();
-//   for (let i = 0; i < polygons.length; i++){
-//     if (inner.has(i)){
-//       continue;
-//     }
-//     const p1 = polygons[i];
-//     nestedPolygons.push([p1]);
-//     for (let j = 0; i < polygons.length; j++){
-//       if (i == j){
-//         continue;
-//       }
-//       const p2 = polygons[j];
-//       if (p2.some(point => !pointInsidePolygon(point, p1))){
-//         continue;
-//       }
-//       // Now: p2 nested in p1
-//       inner.add(j);
-//       nestedPolygons[nestedPolygons.length - 1].push(p2);
-//     }
-//   }
-//   return nestedPolygons;
-// }
