@@ -1,7 +1,7 @@
 const canvas = document.getElementById("pixi-canvas");
 const ctx = canvas.getContext('2d');
 let startScreen = true;
-let image, w, h, xoff, yoff, points, fewerPoints, groupedPoints = undefined
+let image, imgData, w, h, xoff, yoff, points, fewerPoints, groupedPoints, quadtree = undefined
 let gui, options;
 
 const r = 3;
@@ -13,10 +13,13 @@ function createGUI(){
     offset: 10.0,
     dropout: 0.6,
     k: 16,
+    minDepth: 7,
+    maxDepth: 9,
     showPoints: false,
     showPolygons: true,
     showTriangles: false,
     showImage: true,
+    showQuadtree: false,
     debug: true,
     showOutline: true,
     saveImage: function(e) {
@@ -27,11 +30,11 @@ function createGUI(){
       link.delete;
     }
   }
-  offsetController = gui.add(options, 'offset', 5, 20, 1);
-  offsetController.onChange(() => { computePointsFromImage(); drawArt() });
+  // offsetController = gui.add(options, 'offset', 5, 20, 1);
+  // offsetController.onChange(() => { computePointsFromImage(); drawArt() });
 
-  dropoutController = gui.add(options, 'dropout', 0.0, 1.0);
-  dropoutController.onChange(() => { computePointsFromImage(); drawArt() });
+  // dropoutController = gui.add(options, 'dropout', 0.0, 1.0);
+  // dropoutController.onChange(() => { computePointsFromImage(); drawArt() });
 
   kController = gui.add(options, 'k', 1, 128, 1)
   kController.name("#colors (2^k)")
@@ -40,10 +43,15 @@ function createGUI(){
   alphaController = gui.add(options, 'alpha', 1, 200);
   alphaController.onChange(() => drawArt());
 
+  gui.add(options, 'minDepth', 1, 7, 1).onChange(() => { computePointsFromImage(); drawArt() });
+  gui.add(options, 'maxDepth', 1, 9, 1).onChange(() => { computePointsFromImage(); drawArt() });
+
   showImageController = gui.add(options, 'showImage')
   showImageController.onChange(() => { drawArt() });
 
   gui.add(options, 'showOutline').onChange(() => { drawArt() });
+  gui.add(options, 'showQuadtree').onChange(() => { drawArt() });
+
   gui.add(options, 'saveImage')
 
   debugFolder = gui.addFolder('Debug folder');
@@ -51,6 +59,7 @@ function createGUI(){
   debugController = debugFolder.add(options, 'debug');
   debugController.name("use our Delaunay")
   debugController.onChange(() => drawArt());
+
 
   showPointsController = debugFolder.add(options, 'showPoints')
   showPointsController.onChange(() => { drawArt() });
@@ -87,26 +96,43 @@ function computePointsFromImage() {
   yoff = (canvas.height-h)/2
   imgCtx.drawImage(image, 0, 0, w, h);
   // Get pixel data of canvas, and thus of the image
-  const imgData = imgCtx.getImageData(0, 0, w, h).data;
+  imgData = imgCtx.getImageData(0, 0, w, h).data;
 
   // Go through the pixels, making jumps of 5, sample the colors and draw circles.
-  const off = options.offset;
-  points = new Array(Math.ceil(w/off) * Math.ceil(h/off));
-  let i = 0;
+  // const off = options.offset;
+  // points = new Array(Math.ceil(w/off) * Math.ceil(h/off));
+  // let i = 0;
 
-  for (let x = 0; x < w; x += off){
-    for (let y = 0; y < h; y += off){
-      const index = x + y * w;
-      const pos = new Coordinate(xoff + x + r, yoff + y + r);
-      const color = new RGB(imgData[4*index], imgData[4*index+1], imgData[4*index+2]);
-      points[i] = new Point(pos, color);
-      i++;
-    }
-  }
+  // for (let x = 0; x < w; x += off){
+  //   for (let y = 0; y < h; y += off){
+  //     const index = x + y * w;
+  //     const pos = new Coordinate(xoff + x + r, yoff + y + r);
+  //     const color = new RGB(imgData[4*index], imgData[4*index+1], imgData[4*index+2]);
+  //     points[i] = new Point(pos, color);
+  //     i++;
+  //   }
+  // }
+
+  // fewerPoints = points.filter(p => Math.random() > options.dropout);
+  // groupedPoints = quantize(fewerPoints, options.k);
+  quadtree = makeQuadtree(imgData, w, h, options.minDepth, options.maxDepth);
+  points = pointsFromQuadtree(quadtree);
   shuffleArray(points);
+  groupedPoints = quantize(points, options.k);
+}
 
-  fewerPoints = points.filter(p => Math.random() > options.dropout);
-  groupedPoints = quantize(fewerPoints, options.k);
+function drawQuadtree(node){
+  if (node.subdivided){
+    drawQuadtree(node.northWest);
+    drawQuadtree(node.northEast);
+    drawQuadtree(node.southWest);
+    drawQuadtree(node.southEast);
+  } else {
+    ctx.strokeStyle = "black";
+    ctx.strokeRect(xoff + node.x, yoff + node.y, node.w, node.h);
+    ctx.fillStyle = `rgb(${node.color[0]}, ${node.color[1]}, ${node.color[2]})`;
+    ctx.fillRect(xoff + node.x, yoff + node.y, node.w, node.h);
+  }
 }
 
 function imageDataFromPoints(points){
@@ -120,6 +146,10 @@ function imageDataFromPoints(points){
 function drawArt() {
   ctx.setLineDash([]);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  if (options.showQuadtree){
+    drawQuadtree(quadtree);
+  }
 
   if (options.showImage){
     ctx.save();
@@ -199,7 +229,8 @@ function drawArt() {
 
   // Draw points
   if (options.showPoints){
-    drawPoints(fewerPoints);
+    // drawPoints(fewerPoints);
+    drawPoints(points);
   }
 }
 
