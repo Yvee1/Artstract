@@ -19,6 +19,13 @@ function createGUI(){
     showImage: true,
     debug: true,
     showOutline: true,
+    saveImage: function(e) {
+      const link = document.createElement('a');
+      link.download = 'download.png';
+      link.href = canvas.toDataURL();
+      link.click();
+      link.delete;
+    }
   }
   offsetController = gui.add(options, 'offset', 5, 20, 1);
   offsetController.onChange(() => { computePointsFromImage(); drawArt() });
@@ -37,6 +44,7 @@ function createGUI(){
   showImageController.onChange(() => { drawArt() });
 
   gui.add(options, 'showOutline').onChange(() => { drawArt() });
+  gui.add(options, 'saveImage')
 
   debugFolder = gui.addFolder('Debug folder');
 

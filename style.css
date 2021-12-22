@@ -4,7 +4,7 @@ body {
     text-align: center;
 }
 
-.button {
+#game .button {
     display: inline-block;
     /* background-color: #00aade; */
     background-color: #33aa33;
