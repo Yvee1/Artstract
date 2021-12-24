@@ -10,18 +10,20 @@ function createGUI(){
   gui = new dat.GUI({name: 'Artstract GUI'});
   options = {
     alpha: 60.0,
+    maxAlpha: 2.5,
     offset: 10.0,
     dropout: 0.6,
-    k: 16,
-    minDepth: 7,
-    maxDepth: 9,
+    k: 4,
+    minDepth: 1,
+    maxDepth: 8,
+    gaps: 0,
     showPoints: false,
     showPolygons: true,
     showTriangles: false,
     showImage: true,
     showQuadtree: false,
-    debug: true,
-    showOutline: true,
+    debug: false,
+    showOutline: false,
     saveImage: function(e) {
       const link = document.createElement('a');
       link.download = 'download.png';
@@ -36,36 +38,34 @@ function createGUI(){
   // dropoutController = gui.add(options, 'dropout', 0.0, 1.0);
   // dropoutController.onChange(() => { computePointsFromImage(); drawArt() });
 
-  kController = gui.add(options, 'k', 1, 128, 1)
+  kController = gui.add(options, 'k', 1, 8, 1)
   kController.name("#colors (2^k)")
   kController.onChange(() => { computePointsFromImage(); drawArt() });
 
-  alphaController = gui.add(options, 'alpha', 1, 200);
-  alphaController.onChange(() => drawArt());
+  // alphaController = gui.add(options, 'alpha', 0.1, 2, 0.01);
+  // alphaController.onChange(() => drawArt());
 
-  gui.add(options, 'minDepth', 1, 7, 1).onChange(() => { computePointsFromImage(); drawArt() });
-  gui.add(options, 'maxDepth', 1, 9, 1).onChange(() => { computePointsFromImage(); drawArt() });
-
-  showImageController = gui.add(options, 'showImage')
-  showImageController.onChange(() => { drawArt() });
-
-  gui.add(options, 'showOutline').onChange(() => { drawArt() });
-  gui.add(options, 'showQuadtree').onChange(() => { drawArt() });
+  // gui.add(options, 'minDepth', 1, 7, 1).onChange(() => { computePointsFromImage(); drawArt() }).name("min. detail");
+  gui.add(options, 'maxDepth', 1, 9, 1).onChange(() => { computePointsFromImage(); drawArt() }).name("detail");
+  // gui.add(options, 'gaps', 0.0, 0.1, 0.001).onChange(() => { drawArt() }).name("gaps");
 
   gui.add(options, 'saveImage')
+  const layers = gui.addFolder('Layers');
+  layers.closed = false;
+  layers.add(options, 'showImage').name("show image").onChange(() => { drawArt() });
+  layers.add(options, 'showQuadtree').onChange(() => { drawArt() }).name("show quadtree");
+  layers.add(options, 'showPoints').onChange(() => { drawArt() }).name("show points");
+  layers.add(options, 'showPolygons').onChange(() => { drawArt() }).name("show polygons");
+  layers.add(options, 'showOutline').onChange(() => { drawArt() }).name("show outline");
+
 
   debugFolder = gui.addFolder('Debug folder');
+
+  debugFolder.add(options, 'maxAlpha', 0, 5).onChange(() => drawArt());
 
   debugController = debugFolder.add(options, 'debug');
   debugController.name("use our Delaunay")
   debugController.onChange(() => drawArt());
-
-
-  showPointsController = debugFolder.add(options, 'showPoints')
-  showPointsController.onChange(() => { drawArt() });
-
-  showPolygonsController = debugFolder.add(options, 'showPolygons')
-  showPolygonsController.onChange(() => { drawArt() });
 
   showTrianglesController = debugFolder.add(options, 'showTriangles')
   showTrianglesController.onChange(() => { drawArt() });
@@ -118,7 +118,7 @@ function computePointsFromImage() {
   quadtree = makeQuadtree(imgData, w, h, options.minDepth, options.maxDepth);
   points = pointsFromQuadtree(quadtree);
   shuffleArray(points);
-  groupedPoints = quantize(points, options.k);
+  groupedPoints = quantize(points, 2**options.k);
 }
 
 function drawQuadtree(node){
@@ -192,7 +192,7 @@ function drawArt() {
 
     if (options.showPolygons){
       // Compute Alpha shape
-      const alphaShape = getAlphaShape(del, coordList, options.alpha);
+      const alphaShape = completeWeightedAlphaShape(del, coordList, pts, options.gaps, options.maxAlpha);
       const perimeterEdges = alphaShape[1];
       const polygons = perimeterEdgesToPolygons(perimeterEdges);
       const alphaTriangles = alphaShape[0];

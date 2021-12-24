@@ -16,6 +16,7 @@ function circumradius(p1, p2, p3) {
  */
 function getAlphaShape(triangles, coords, alpha) {
   // We will filter the triangles based on alpha, and determine the perimeter edges of the resulting triangulation(s).
+  const allVertices = [];
   const allEdges = [];
   const filteredTriangles = [];
 
@@ -34,6 +35,9 @@ function getAlphaShape(triangles, coords, alpha) {
       allEdges.push([t[0], t[1]]);
       allEdges.push([t[1], t[2]]);
       allEdges.push([t[0], t[2]]);
+      allVertices.push(t[0]);
+      allVertices.push(t[1]);
+      allVertices.push(t[2]);
     }
   }
 
@@ -57,8 +61,110 @@ function getAlphaShape(triangles, coords, alpha) {
       }
     }
 	}
+
+  allVertices.sort();
+  let prev = undefined;
+  let n = 0;
+  for (let i = 0; i < allVertices.length; i++){
+    if (allVertices[i] != prev){
+      n++;
+      prev = allVertices[i];
+    }
+  }
+  const untouched = coords.length - n;
   
-  return [filteredTriangles, perimeterEdges];
+  return [filteredTriangles, perimeterEdges, untouched];
+}
+
+/**
+ * Returns alpha-shape triangles and perimeter edges
+ * @param {Array<Int>} triangles     - Delaunay triangulation represented by indices of points.
+ * @param {Array<Coordinate>} coords - List of coordinates of the points
+ * @param {Number} pts               - Points with alpha attribute
+ * 
+ * Implementation: Steven
+ */
+function getWeightedAlphaShape(triangles, coords, alpha, pts) {
+  // We will filter the triangles based on alpha, and determine the perimeter edges of the resulting triangulation(s).
+  const allVertices = [];
+  const allEdges = [];
+  const filteredTriangles = [];
+
+  for (let i = 0; i < triangles.length; i+=3) {
+    // Indices of the triangle vertices
+    const t = [triangles[i], triangles[i+1], triangles[i+2]].sort();
+    // Coordinates of the triangle vertices
+    const p1 = coords[t[0]];
+    const p2 = coords[t[1]];
+    const p3 = coords[t[2]];
+    // Calculate circumradius; should be < alpha to be in the alpha shape.
+    const r = circumradius(p1, p2, p3);
+    // const alphaMultiplier = (pts[t[0]].alpha + pts[t[1]].alpha + pts[t[2]].alpha)/3 * 2;
+    const alphaMultiplier = Math.max(pts[t[0]].alpha, pts[t[1]].alpha, pts[t[2]].alpha);
+    if (r < alpha * alphaMultiplier) {
+      filteredTriangles.push(t);
+
+      allEdges.push([t[0], t[1]]);
+      allEdges.push([t[1], t[2]]);
+      allEdges.push([t[0], t[2]]);
+      allVertices.push(t[0]);
+      allVertices.push(t[1]);
+      allVertices.push(t[2]);
+    }
+  }
+
+  // Lexicographic sort
+  allEdges.sort((a, b) => a[0] == b[0] ? a[1] - b[1] : a[0] - b[0]);
+
+  // Perimeter edges are the ones occurring only once in the allEdges array.
+  const perimeterEdges = [];
+	for (let i = 0; i < allEdges.length; i++){
+    if (i == 0){
+      if (allEdges[i][0] != allEdges[i+1][0] || allEdges[i][1] != allEdges[i+1][1]){
+	      perimeterEdges.push(allEdges[i]);
+	    }
+    } else if (i == allEdges.length - 1){
+      if (allEdges[i][0] != allEdges[i-1][0] || allEdges[i][1] != allEdges[i-1][1]){
+        perimeterEdges.push(allEdges[i]);
+      }
+    } else {
+      if ((allEdges[i][0] != allEdges[i+1][0] || allEdges[i][1] != allEdges[i+1][1]) && (allEdges[i][0] != allEdges[i-1][0] || allEdges[i][1] != allEdges[i-1][1])){
+        perimeterEdges.push(allEdges[i]);
+      }
+    }
+	}
+
+  allVertices.sort();
+  let prev = undefined;
+  let n = 0;
+  for (let i = 0; i < allVertices.length; i++){
+    if (allVertices[i] != prev){
+      n++;
+      prev = allVertices[i];
+    }
+  }
+  const untouched = pts.length - n;
+  
+  return [filteredTriangles, perimeterEdges, untouched];
+}
+
+function completeWeightedAlphaShape(triangles, coords, pts, gaps, maxAlpha){
+  let lower = 0;
+  let upper = maxAlpha;
+  let PREC = 0.1;
+  let result = undefined;
+
+  while (lower < upper - PREC){
+    const mid = (lower + upper)/2;
+    result = getWeightedAlphaShape(triangles, coords, mid, pts);
+    // result = getAlphaShape(triangles, coords, mid);
+    if (result[2] > coords.length*gaps){
+      lower = mid;
+    } else {
+      upper = mid;
+    }
+  }
+  return getWeightedAlphaShape(triangles, coords, upper, pts);
 }
 
 function ccwAngle(p1, p2, p3){

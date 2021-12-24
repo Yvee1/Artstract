@@ -85,9 +85,28 @@ function pointsFromQuadtree(root){
     const node = stack.pop();
 
     if (!node.subdivided){
-      const x = Math.floor(node.x + node.w/2);
-      const y = Math.floor(node.y + node.h/2);
-      qtPoints.push(new Point(new Coordinate(x + xoff, y + yoff), new RGB(...getColor(x, y))));
+      const newPoints = [];
+      const x1 = Math.floor(node.x);
+      const y1 = Math.floor(node.y);
+      const x2 = Math.floor(node.x);
+      const y2 = Math.floor(node.y + node.h-1);
+      const x3 = Math.floor(node.x + node.w-1);
+      const y3 = Math.floor(node.y);
+      const x4 = Math.floor(node.x + node.w-1);
+      const y4 = Math.floor(node.y + node.h-1);
+      const x5 = Math.floor(node.x + node.w / 2);
+      const y5 = Math.floor(node.y + node.h / 2);
+      if (node.x == 0){
+        newPoints.push(new Point(new Coordinate(x1 + xoff, y1 + yoff), new RGB(...getColor(x1, y1))));
+        newPoints.push(new Point(new Coordinate(x2 + xoff, y2 + yoff), new RGB(...getColor(x2, y2))));
+      }
+      if (node.y == 0){
+        newPoints.push(new Point(new Coordinate(x3 + xoff, y3 + yoff), new RGB(...getColor(x3, y4))));
+      }
+      newPoints.push(new Point(new Coordinate(x4 + xoff, y4 + yoff), new RGB(...getColor(x4, y4))));
+      newPoints.push(new Point(new Coordinate(x5 + xoff, y5 + yoff), new RGB(...getColor(x5, y5))));
+      const alpha = Math.sqrt(node.w**2 + node.h**2);
+      newPoints.forEach(pt => { pt.alpha = alpha; qtPoints.push(pt) });
       continue;
     }
     stack.push(node.northWest);
