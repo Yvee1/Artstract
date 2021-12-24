@@ -1,6 +1,17 @@
 const realUploadButton = document.getElementById("file-upload");
 const fakeButton = document.getElementById("image-button");
 const gameTitle = document.getElementById("game-title");
+const backButton = document.getElementById("back-button");
+
+backButton.addEventListener("click", () => {
+  fakeButton.classList.remove("hidden");
+  gameTitle.classList.remove("hidden");
+  target.classList.remove("hidden");
+  backButton.classList.add("hidden");
+  gui.destroy();
+  startScreen = true;
+  drawStartScreen();
+})
 
 fakeButton.addEventListener("click", () => {
   realUploadButton.click();
@@ -49,9 +60,13 @@ function handleImageFile(file){
     img.src = event.target.result;
 
     // Remove start menu GUI
-    fakeButton.remove();
-    gameTitle.remove();
-    target.remove();
+    // fakeButton.remove();
+    // gameTitle.remove();
+    // target.remove();
+    fakeButton.classList.add("hidden");
+    gameTitle.classList.add("hidden");
+    target.classList.add("hidden");
+    backButton.classList.remove("hidden");
   }
 
   // Can be used in the future for showing a progress indicator for loading the image; currently prints to console.

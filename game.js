@@ -267,13 +267,14 @@ function drawStartScreen(){
 
 function animateStartScreen(){
   if (startScreen){
-  const now = new Date().getTime();
+    const now = new Date().getTime();
 
-  ctx.setLineDash([5, 5]);
-  ctx.lineDashOffset = (now/40) % 10;
-  ctx.fillStyle = "#fdfffd";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  lines.forEach(line => line.draw(now));
+    ctx.setLineDash([5, 5]);
+    ctx.lineDashOffset = (now/40) % 10;
+    ctx.fillStyle = "#fdfffd";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = "#555";
+    lines.forEach(line => line.draw(now));
     window.requestAnimationFrame(animateStartScreen);
   }
 }
