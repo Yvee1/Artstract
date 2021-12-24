@@ -38,7 +38,7 @@ function createGUI(){
   // dropoutController = gui.add(options, 'dropout', 0.0, 1.0);
   // dropoutController.onChange(() => { computePointsFromImage(); drawArt() });
 
-  kController = gui.add(options, 'k', 1, 8, 1)
+  kController = gui.add(options, 'k', 1, 6, 1)
   kController.name("#colors (2^k)")
   kController.onChange(() => { computePointsFromImage(); drawArt() });
 

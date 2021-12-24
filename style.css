@@ -11,7 +11,7 @@ body {
     transition: background-color .5s;
     color: white;
     border-radius: 8px;
-    font-weight: bold;
+    /* font-weight: bold; */
     font-size: 1.5em;
     padding: 8px 25px;
     cursor: pointer;
