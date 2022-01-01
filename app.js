@@ -4,6 +4,9 @@ const gameTitle = document.getElementById("game-title");
 const backButton = document.getElementById("back-button");
 
 backButton.addEventListener("click", () => {
+  quadtree = dels = alphaShapes = polygons = searchStructures = coordLists = selectedPolygon = undefined;
+  console.log("!!")
+  console.log(searchStructures);
   fakeButton.classList.remove("hidden");
   gameTitle.classList.remove("hidden");
   target.classList.remove("hidden");
@@ -54,15 +57,14 @@ function handleImageFile(file){
     img.onload = function(){ 
       image = img;
       startScreen = false;
+      quadtree = dels = alphaShapes = polygons = searchStructures = coordLists = selectedPolygon = undefined;
       createGUI();
       computePointsFromImage();
-      drawArt() };
+      computeAndDraw();
+    };
     img.src = event.target.result;
 
     // Remove start menu GUI
-    // fakeButton.remove();
-    // gameTitle.remove();
-    // target.remove();
     fakeButton.classList.add("hidden");
     gameTitle.classList.add("hidden");
     target.classList.add("hidden");

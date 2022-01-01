@@ -90,10 +90,14 @@ function getWeightedAlphaShape(triangles, coords, alpha, pts) {
   const allEdges = [];
   const filteredTriangles = [];
 
-  for (let i = 0; i < triangles.length; i+=3) {
+  for (let i = 0; i < triangles.length; i++) {
+    const tri = triangles[i]
     // Indices of the triangle vertices
-    const t = [triangles[i], triangles[i+1], triangles[i+2]].sort();
+    const t = [tri.v1, tri.v2, tri.v3].sort();
     // Coordinates of the triangle vertices
+    if (Math.max(t[0], t[1], t[2]) >= pts.length) {
+      continue;
+    }
     const p1 = coords[t[0]];
     const p2 = coords[t[1]];
     const p3 = coords[t[2]];
@@ -103,6 +107,7 @@ function getWeightedAlphaShape(triangles, coords, alpha, pts) {
     const alphaMultiplier = Math.max(pts[t[0]].alpha, pts[t[1]].alpha, pts[t[2]].alpha);
     if (r < alpha * alphaMultiplier) {
       filteredTriangles.push(t);
+      tri.searchNode.filtered = true;
 
       allEdges.push([t[0], t[1]]);
       allEdges.push([t[1], t[2]]);

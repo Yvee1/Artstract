@@ -1,10 +1,36 @@
 const canvas = document.getElementById("pixi-canvas");
 const ctx = canvas.getContext('2d');
 let startScreen = true;
-let image, imgData, w, h, xoff, yoff, points, fewerPoints, groupedPoints, quadtree = undefined
+let image, imgData, w, h, xoff, yoff, points, fewerPoints, groupedPoints;
+let quadtree, dels, alphaShapes, polygons, searchStructures, coordLists, selectedPolygon;
 let gui, options;
 
 const r = 3;
+
+canvas.parentElement.addEventListener("mousedown", function(evt){
+  const rect = canvas.getBoundingClientRect();
+  const pos = new Coordinate(evt.clientX - rect.left, evt.clientY - rect.top);
+  if (searchStructures){
+    focus(pos);
+  }
+});
+
+function focus(pos){
+  var found = -1;
+  for (let i = searchStructures.length - 1; i >= 0; i--){
+    const result = searchStructures[i].getTriangleNodeContaining(pos, coordLists[i]);
+    if (result != false && !result.containing && result.filtered) {
+      found = i;
+      break;
+    }
+  }
+  if (found >= 0 && found != selectedPolygon){
+    selectedPolygon = found;
+  } else {
+    selectedPolygon = undefined;
+  }
+  drawArt();
+}
 
 function createGUI(){
   gui = new dat.GUI({name: 'Artstract GUI'});
@@ -22,7 +48,7 @@ function createGUI(){
     showTriangles: false,
     showImage: true,
     showQuadtree: false,
-    debug: false,
+    debug: true,
     showOutline: false,
     saveImage: function(e) {
       const link = document.createElement('a');
@@ -40,13 +66,13 @@ function createGUI(){
 
   kController = gui.add(options, 'k', 1, 6, 1)
   kController.name("#colors (2^k)")
-  kController.onChange(() => { computePointsFromImage(); drawArt() });
+  kController.onChange(() => { computePointsFromImage(); computeAndDraw() });
 
   // alphaController = gui.add(options, 'alpha', 0.1, 2, 0.01);
   // alphaController.onChange(() => drawArt());
 
   // gui.add(options, 'minDepth', 1, 7, 1).onChange(() => { computePointsFromImage(); drawArt() }).name("min. detail");
-  gui.add(options, 'maxDepth', 1, 9, 1).onChange(() => { computePointsFromImage(); drawArt() }).name("detail");
+  gui.add(options, 'maxDepth', 1, 9, 1).onChange(() => { computePointsFromImage(); computeAndDraw() }).name("detail");
   // gui.add(options, 'gaps', 0.0, 0.1, 0.001).onChange(() => { drawArt() }).name("gaps");
 
   gui.add(options, 'saveImage')
@@ -61,7 +87,7 @@ function createGUI(){
 
   debugFolder = gui.addFolder('Debug folder');
 
-  debugFolder.add(options, 'maxAlpha', 0, 5).onChange(() => drawArt());
+  debugFolder.add(options, 'maxAlpha', 0, 5).onChange(() => { computeAlphaShape(); drawArt() });
 
   debugController = debugFolder.add(options, 'debug');
   debugController.name("use our Delaunay")
@@ -86,7 +112,6 @@ function computePointsFromImage() {
   const imgCanvas = document.createElement("canvas");
   const imgCtx = imgCanvas.getContext("2d");
   const scale = Math.min(canvas.width / image.width, canvas.height / image.height);
-  // console.log(scale);
   w = Math.floor(image.width * scale);
   h = Math.floor(image.height * scale);
   imgCanvas.width = w;
@@ -143,6 +168,48 @@ function imageDataFromPoints(points){
   return imgData;
 }
 
+function computeDelaunay(){
+  searchStructures = [];
+  coordLists = [];
+  dels = [];
+  groupedPoints.forEach (pts => {
+    let coordList = pts.map(p => p.pos);
+
+    // Compute Delaunay triangulation
+    if (options.debug) {
+      const output = getDelaunayTriangulationIncremental(coordList);
+      dels.push(output[0]);
+      coordLists.push(output[1]);
+      searchStructures.push(output[2]);
+    } else {
+      dels.push(getDelaunayTriangulation(coordList));
+    }
+  });
+}
+
+function computeAlphaShape(){
+  alphaShapes = [];
+  polygons = [];
+  groupedPoints.forEach ((pts, index) => {
+    // Compute Alpha shape
+    const alphaShape = completeWeightedAlphaShape(dels[index], coordLists[index], pts, options.gaps, options.maxAlpha);
+    alphaShapes.push(alphaShape);
+    polygons.push(perimeterEdgesToPolygons(alphaShape[1]));
+  });
+}
+
+function computeAndDraw(){
+  if (options.showTriangles || options.showPolygons){
+    computeDelaunay();
+  }
+  
+  if (options.showPolygons){
+    computeAlphaShape();
+  }
+
+  drawArt();
+}
+
 function drawArt() {
   ctx.setLineDash([]);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
@@ -158,21 +225,20 @@ function drawArt() {
     ctx.restore();
   }
 
-  // console.log(output);
-
-  groupedPoints.map ((pts, index) => {
+  // const areas = dels.map((ts, i) => {
+  //   let obj = {area: ts.reduce((acc, t) => acc + t.area(coordLists[i]), 0), index: i}
+  //   return obj
+  // });
+  // areas.sort();
+  // areas.reverse();
+  
+  // areas.forEach(area => {
+  //   const index = area.index;
+  for (let index = 0; index < groupedPoints.length; index++){
     const color = output[index];
-    let coordList = pts.map(p => p.pos);
-
-    // Compute Delaunay triangulation
-    let del;
-    if (options.debug) {
-      const output = getDelaunayTriangulationIncremental(coordList);
-      del = output[0];
-      coordList = output[1];
-    } else {
-      del = getDelaunayTriangulation(coordList);
-    }
+    const del = dels[index];
+    const alphaShape = alphaShapes[index];
+    const coordList = coordLists[index];
 
     if (options.showTriangles){
       for (let i = 0; i < del.length; i+=3){
@@ -191,17 +257,17 @@ function drawArt() {
     }
 
     if (options.showPolygons){
-      // Compute Alpha shape
-      const alphaShape = completeWeightedAlphaShape(del, coordList, pts, options.gaps, options.maxAlpha);
-      const perimeterEdges = alphaShape[1];
-      const polygons = perimeterEdgesToPolygons(perimeterEdges);
       const alphaTriangles = alphaShape[0];
 
       // Draw inside of alpha shapes
+      ctx.lineWidth = 1;
+      ctx.fillStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]}, 1.0)`;
+      ctx.strokeStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]}, 1.0)`;
+      if (selectedPolygon !== undefined && selectedPolygon !== index){
+        ctx.fillStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]}, 0.2)`;
+        ctx.strokeStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]}, 0.2)`;
+      }
       alphaTriangles.forEach(polygon => {
-        ctx.lineWidth = 1;
-        ctx.fillStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]}, 1.0)`;
-        ctx.strokeStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]}, 1.0)`;
         ctx.beginPath();
         ctx.moveTo(coordList[polygon[0]].x, coordList[polygon[0]].y);
         for (let i = 1; i < polygon.length+1; i++){
@@ -213,19 +279,21 @@ function drawArt() {
 
       // Draw outline of alpha shapes
       if (options.showOutline){
-        polygons.forEach(polygon => {
-          ctx.lineWidth = 2;
-          ctx.strokeStyle = 'black';
-          ctx.beginPath();
-          ctx.moveTo(coordList[polygon[0]].x, coordList[polygon[0]].y);
-          for (let i = 1; i < polygon.length+1; i++){
-            ctx.lineTo(coordList[polygon[i%polygon.length]].x, coordList[polygon[i%polygon.length]].y);
-          }
-          ctx.stroke();
-        })
+        if (selectedPolygon === undefined || selectedPolygon == index){
+          polygons[index].forEach(polygon => {
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = 'black';
+            ctx.beginPath();
+            ctx.moveTo(coordList[polygon[0]].x, coordList[polygon[0]].y);
+            for (let i = 1; i < polygon.length+1; i++){
+              ctx.lineTo(coordList[polygon[i%polygon.length]].x, coordList[polygon[i%polygon.length]].y);
+            }
+            ctx.stroke();
+          })
+        }
       }
     }
-  })
+  }
 
   // Draw points
   if (options.showPoints){
@@ -270,6 +338,7 @@ function animateStartScreen(){
     const now = new Date().getTime();
 
     ctx.setLineDash([5, 5]);
+    ctx.lineWidth = 1;
     ctx.lineDashOffset = (now/40) % 10;
     ctx.fillStyle = "#fdfffd";
     ctx.fillRect(0, 0, canvas.width, canvas.height);

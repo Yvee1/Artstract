@@ -175,6 +175,13 @@ class Triangle {
     }
   }
 
+  area(coordList){
+    const a = coordList[this.v1];
+    const b = coordList[this.v2];
+    const c = coordList[this.v3];
+    return (a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y))/2;
+  }
+
   toString() {
     return f`Triangle({this.v1}, {this.v2}, {this.v3})`;
   }
