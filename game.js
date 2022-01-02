@@ -2,10 +2,10 @@ const canvas = document.getElementById("pixi-canvas");
 const ctx = canvas.getContext('2d');
 let startScreen = true;
 let image, imgData, w, h, xoff, yoff, points, fewerPoints, groupedPoints;
-let quadtree, dels, alphaShapes, polygons, searchStructures, coordLists, selectedPolygon;
+let quadtree, dels, alphaShapes, polygons, searchStructures, coordLists, selectedPolygon, alphas;
 let gui, options;
 
-const r = 3;
+const r = 2;
 
 canvas.parentElement.addEventListener("mousedown", function(evt){
   const rect = canvas.getBoundingClientRect();
@@ -14,6 +14,20 @@ canvas.parentElement.addEventListener("mousedown", function(evt){
     focus(pos);
   }
 });
+
+document.addEventListener('keydown', function(e){
+  const change = 1.5
+  if (selectedPolygon !== undefined){
+    if (e.key == 'ArrowDown' || e.key == 'Down'){
+      alphas[selectedPolygon] /= change;
+    }
+    if (e.key == 'ArrowUp' || e.key == 'Up'){
+      alphas[selectedPolygon] *= change;
+    }
+  }
+  computeAlphaShape();
+  drawArt();
+})
 
 function focus(pos){
   var found = -1;
@@ -87,7 +101,7 @@ function createGUI(){
 
   debugFolder = gui.addFolder('Debug folder');
 
-  debugFolder.add(options, 'maxAlpha', 0, 5).onChange(() => { computeAlphaShape(); drawArt() });
+  debugFolder.add(options, 'maxAlpha', 0, 5).onChange(() => { computeAlphas(); computeAlphaShape(); drawArt() });
 
   debugController = debugFolder.add(options, 'debug');
   debugController.name("use our Delaunay")
@@ -187,25 +201,33 @@ function computeDelaunay(){
   });
 }
 
+function computeAlphas(){
+  alphas = [];
+  groupedPoints.forEach ((pts, index) => {
+    alphas[index] = completeWeightedAlphaShape(dels[index], coordLists[index], pts, options.gaps, options.maxAlpha);
+  });
+}
+
 function computeAlphaShape(){
   alphaShapes = [];
   polygons = [];
   groupedPoints.forEach ((pts, index) => {
     // Compute Alpha shape
-    const alphaShape = completeWeightedAlphaShape(dels[index], coordLists[index], pts, options.gaps, options.maxAlpha);
+    const alphaShape = getWeightedAlphaShape(dels[index], coordLists[index], alphas[index], pts);
     alphaShapes.push(alphaShape);
     polygons.push(perimeterEdgesToPolygons(alphaShape[1]));
   });
 }
 
 function computeAndDraw(){
-  if (options.showTriangles || options.showPolygons){
+  // if (options.showTriangles || options.showPolygons){
     computeDelaunay();
-  }
+  // }
   
-  if (options.showPolygons){
+  // if (options.showPolygons){
+    computeAlphas();
     computeAlphaShape();
-  }
+  // }
 
   drawArt();
 }
@@ -241,16 +263,16 @@ function drawArt() {
     const coordList = coordLists[index];
 
     if (options.showTriangles){
-      for (let i = 0; i < del.length; i+=3){
+      for (let i = 0; i < del.length; i++){
         ctx.lineWidth = 1;
         ctx.fillStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]}, 1.0)`;
         // ctx.strokeStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]}, 1.0)`;
         ctx.strokeStyle = "black";
         ctx.beginPath();
-        ctx.moveTo(coordList[del[i]].x, coordList[del[i]].y);
-        for (let j = 1; j < 4; j++){
-          ctx.lineTo(coordList[del[i + (j%3)]].x, coordList[del[i + (j%3)]].y);
-        }
+        ctx.moveTo(coordList[del[i].v1].x, coordList[del[i].v1].y);
+        ctx.lineTo(coordList[del[i].v2].x, coordList[del[i].v2].y);
+        ctx.lineTo(coordList[del[i].v3].x, coordList[del[i].v3].y);
+        ctx.lineTo(coordList[del[i].v1].x, coordList[del[i].v1].y);
         ctx.fill();
         ctx.stroke();
       }

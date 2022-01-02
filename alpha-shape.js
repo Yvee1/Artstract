@@ -115,6 +115,8 @@ function getWeightedAlphaShape(triangles, coords, alpha, pts) {
       allVertices.push(t[0]);
       allVertices.push(t[1]);
       allVertices.push(t[2]);
+    } else {
+      tri.searchNode.filtered = false;
     }
   }
 
@@ -169,7 +171,7 @@ function completeWeightedAlphaShape(triangles, coords, pts, gaps, maxAlpha){
       upper = mid;
     }
   }
-  return getWeightedAlphaShape(triangles, coords, upper, pts);
+  return upper;
 }
 
 function ccwAngle(p1, p2, p3){

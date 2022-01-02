@@ -5,8 +5,6 @@ const backButton = document.getElementById("back-button");
 
 backButton.addEventListener("click", () => {
   quadtree = dels = alphaShapes = polygons = searchStructures = coordLists = selectedPolygon = undefined;
-  console.log("!!")
-  console.log(searchStructures);
   fakeButton.classList.remove("hidden");
   gameTitle.classList.remove("hidden");
   target.classList.remove("hidden");
