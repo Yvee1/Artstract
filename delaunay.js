@@ -265,10 +265,11 @@ class TriangleSearchTreeNode {
           }
         }
         console.log(this.triangle.toString(coordList));
-        console.log(`Error occurred finding point ${p} with coordinates ${coordList[p].toString()}`);
+        console.log(p)
+        console.log(`Error occurred finding point ${p}`);
         for (let i = 0; i < this.descendants.length; i++) {
           const node = this.descendants[i];
-          console.log(node.triangle.toString(coordList), coordList[p].isInTriangle(node.triangle, coordList));
+          console.log(node.triangle.toString(coordList), p.isInTriangle(node.triangle, coordList));
         }
         throw "Should not be here."; // should always have at least one triangle containing the point unless not started at root node
       } else return this;  // found leaf node which contains p
