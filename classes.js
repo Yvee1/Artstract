@@ -1,28 +1,59 @@
+function area(x1, y1, x2, y2, x3, y3) {
+  return Math.abs((x1*(y2-y3) + x2*(y3-y1)+ x3*(y1-y2)));
+}
+  
+
 class Coordinate {
   constructor(x, y) {
-    this.x = x;
-    this.y = y;
+    this.x = Math.round(x);
+    this.y = Math.round(y);
   }
 
-  /* Returns whether this coordinate lies in the triangle */
+  toString() {
+    return `(${this.x}, ${this.y})`;
+  }
+
+  // /* Returns whether this coordinate lies in the triangle */
+  // isInTriangle(triangle, coordList) {
+  //   const p1 = coordList[triangle.v1];
+  //   const p2 = coordList[triangle.v2];
+  //   const p3 = coordList[triangle.v3];
+  //   if (this === p1 || this === p2 || this === p3) {
+  //     return true;
+  //   }
+
+  //   const d1 = sign(this, p1, p2);
+  //   const d2 = sign(this, p2, p3);
+  //   const d3 = sign(this, p3, p1);
+
+  //   const hasNeg = (d1 < 0) || (d2 < 0) || (d3 < 0);
+  //   const hasPos = (d1 > 0) || (d2 > 0) || (d3 > 0);
+  //   return !(hasNeg && hasPos);
+  // }
+
   isInTriangle(triangle, coordList) {
-    const p1 = coordList[triangle.v1];
-    const p2 = coordList[triangle.v2];
-    const p3 = coordList[triangle.v3];
-    if (this === p1 || this === p2 || this === p3) {
-      return true;
-    }
+    const x1 = coordList[triangle.v1].x;
+    const y1 = coordList[triangle.v1].y;
+    const x2 = coordList[triangle.v2].x;
+    const y2 = coordList[triangle.v2].y;
+    const x3 = coordList[triangle.v3].x;
+    const y3 = coordList[triangle.v3].y;
 
-    const d1 = sign(this, p1, p2);
-    const d2 = sign(this, p2, p3);
-    const d3 = sign(this, p3, p1);
-
-    const hasNeg = (d1 < 0) || (d2 < 0) || (d3 < 0);
-    const hasPos = (d1 > 0) || (d2 > 0) || (d3 > 0);
-    return !(hasNeg && hasPos);
+    const A = area (x1, y1, x2, y2, x3, y3);
+  
+    /* Calculate area of triangle PBC */ 
+    const A1 = area (this.x, this.y, x2, y2, x3, y3);
+  
+    /* Calculate area of triangle PAC */ 
+    const A2 = area (x1, y1, this.x, this.y, x3, y3);
+  
+    /* Calculate area of triangle PAB */  
+    const A3 = area (x1, y1, x2, y2, this.x, this.y);
+    
+    /* Check if sum of A1, A2 and A3 is same as A */
+    return (A === A1 + A2 + A3);
   }
 }
-
 
 class Point {
   constructor(pos, color) {
@@ -175,7 +206,10 @@ class Triangle {
     }
   }
 
-  toString() {
-    return f`Triangle({this.v1}, {this.v2}, {this.v3})`;
+  toString(coordList) {
+    const a = coordList[this.v1].toString();
+    const b = coordList[this.v2].toString();
+    const c = coordList[this.v3].toString();
+    return `Triangle(${a}, ${b}, ${c})`;
   }
 }

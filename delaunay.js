@@ -75,7 +75,8 @@ function drawTriangles(triangles, coordList) {
   const topLeftCoordinate = new Coordinate(minX-height, minY);
   const topRightCoordinate = new Coordinate(maxX+height, minY);
   // we try to get a 90 degree angle at the top using tan(theta) = o/a
-  const bottomCoordinate = new Coordinate((minX + maxX)/2, (width/2+height)/Math.tan(Math.PI/4));
+  // so tan(pi/4) = 1 = half basis width/height
+  const bottomCoordinate = new Coordinate((minX + maxX)/2, maxY + (width/2+height));
 
   return [topLeftCoordinate, topRightCoordinate, bottomCoordinate];
 }
@@ -262,6 +263,12 @@ class TriangleSearchTreeNode {
             return triangleNode;
           }
         }
+        console.log(this.triangle.toString(coordList));
+        console.log(`Error occurred finding point ${p} with coordinates ${coordList[p].toString()}`);
+        for (let i = 0; i < this.descendants.length; i++) {
+          const node = this.descendants[i];
+          console.log(node.triangle.toString(coordList), coordList[p].isInTriangle(node.triangle, coordList));
+        }
         throw "Should not be here."; // should always have at least one triangle containing the point unless not started at root node
       } else return this;  // found leaf node which contains p
     } else return false; 
@@ -390,13 +397,15 @@ function getDelaunayTriangulationIncremental(P) {
 
   // start incremental construction
   // create search structure
-  let S = new TriangleSearchTreeNode(new Triangle(...containingTriangle));
+  const S = new TriangleSearchTreeNode(new Triangle(...containingTriangle));
 
   for (let i = 0; i < P.length; i++) {
     // INSERT(i, S)
     const enclosingTriangle = S.getTriangleNodeContaining(i, coordList);
     if (enclosingTriangle){
       enclosingTriangle.split(i, coordList);
+    } else {
+      throw 'Error; not found';
     }
   }
 
