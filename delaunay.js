@@ -104,6 +104,7 @@ class TriangleSearchTreeNode {
     this.deleted = false;
 
     this.adjacentTriangleNodes = [];
+    this.containing = false;
   }
 
   split(p, coordList) {
@@ -254,7 +255,7 @@ class TriangleSearchTreeNode {
 
   /** Returns triangle which contains the point p */
   getTriangleNodeContaining(p, coordList) {
-    if (coordList[p].isInTriangle(this.triangle, coordList)) {
+    if (p.isInTriangle(this.triangle, coordList)) {
       if (this.deleted) { // recurse through descendants
         for (let i = 0; i < this.descendants.length; i++) {
           const node = this.descendants[i];
@@ -347,12 +348,16 @@ function getTrianglesAdjacent(root){
   const stack = [node];
   while (stack.length > 0){
     const current = stack.pop();
-    triangles.push(current.triangle);
+    if (!current.containing){
+      const triangle = current.triangle;
+      triangle.searchNode = current;
+      triangles.push(triangle);
+    }
 
     for (let i = 0; i < current.adjacentTriangleNodes.length; i++){
       const adj = current.adjacentTriangleNodes[i];
       if (adj.deleted){
-        console.log("Hmm.");
+        console.log("This message should never show up.");
         continue;
       }
       if (seenNodes.includes(adj)){
@@ -398,10 +403,11 @@ function getDelaunayTriangulationIncremental(P) {
   // start incremental construction
   // create search structure
   const S = new TriangleSearchTreeNode(new Triangle(...containingTriangle));
+  S.containing = true;
 
   for (let i = 0; i < P.length; i++) {
     // INSERT(i, S)
-    const enclosingTriangle = S.getTriangleNodeContaining(i, coordList);
+    const enclosingTriangle = S.getTriangleNodeContaining(coordList[i], coordList);
     if (enclosingTriangle){
       enclosingTriangle.split(i, coordList);
     } else {
@@ -416,14 +422,14 @@ function getDelaunayTriangulationIncremental(P) {
   // drawTriangles(triangles, coordList);
 
   // change triangles to desired format
-  let delaunayTriangles = [];
-  triangles.forEach(triangle => {
-    // check for large triangle
-    const trianglePoints = [triangle.v1, triangle.v2, triangle.v3];
-    if (trianglePoints.filter(p => containingTriangle.includes(p)).length === 0) {
-      delaunayTriangles.push(...trianglePoints);
-    }
-  });
+  // let delaunayTriangles = [];
+  // triangles.forEach(triangle => {
+  //   // check for large triangle
+  //   const trianglePoints = [triangle.v1, triangle.v2, triangle.v3];
+  //   if (trianglePoints.filter(p => containingTriangle.includes(p)).length === 0) {
+  //     delaunayTriangles.push(...trianglePoints);
+  //   }
+  // });
 
-  return [delaunayTriangles, coordList];
+  return [triangles, coordList, S];
 }

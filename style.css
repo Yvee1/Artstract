@@ -4,14 +4,14 @@ body {
     text-align: center;
 }
 
-.button {
+#game .button {
     display: inline-block;
     /* background-color: #00aade; */
     background-color: #33aa33;
     transition: background-color .5s;
     color: white;
     border-radius: 8px;
-    font-weight: bold;
+    /* font-weight: bold; */
     font-size: 1.5em;
     padding: 8px 25px;
     cursor: pointer;
@@ -81,4 +81,24 @@ body {
 
 #drag-and-drop-target.dragover {
     background: #eeeeee;
+}
+
+#back-button {
+    position: absolute;
+    width: 6em;
+    left: -7em;
+    top: 600px;
+    /* background-color: white; */
+    transition: background-color .5s;
+    color: black;
+    /* border-radius: 8px; */
+    border: 1px solid black;
+    /* padding: 4px 10px; */
+    cursor: pointer;
+    position: relative;
+    transform: translateY(-100%);
+}
+
+.hidden {
+    display: none !important;
 }
