@@ -91,8 +91,8 @@ class Edge {
     return ((e.u === this.u && e.v == this.v) || (e.u === this.v && e.v == this.u));
   }
 
-  draw(coordList) {
-    ctx.fillStyle = 'black';
+  draw(coordList, color='black') {
+    ctx.strokeStyle = color;
     ctx.beginPath();
     ctx.moveTo(coordList[this.u].x, coordList[this.u].y);
     ctx.lineTo(coordList[this.v].x, coordList[this.v].y);
@@ -109,13 +109,20 @@ class Edge {
 }
 
 class Triangle {
-  constructor(v1, v2, v3) {
+  constructor(v1, v2, v3, coordList) {
     this.v1 = v1;
     this.v2 = v2;
     this.v3 = v3;
+
     this.vertices = [this.v1, this.v2, this.v3];
 
     this.edges = this.getEdges();
+    if (this.liesOnEdge(new Edge(this.v1, this.v2), v3, coordList)
+      || this.liesOnEdge(new Edge(this.v2, this.v3), v1, coordList)
+      || this.liesOnEdge(new Edge(this.v2, this.v3), v1, coordList)) {
+        console.trace();
+        throw "fault";
+      }
   }
 
   /** TODO: Code from SO. */
@@ -160,9 +167,9 @@ class Triangle {
     });
   }
 
-  draw(coordList) {
+  draw(coordList, color='black') {
     this.edges.forEach(edge => {
-      edge.draw(coordList);
+      edge.draw(coordList, color);
     })
   }
 
