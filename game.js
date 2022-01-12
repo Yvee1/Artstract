@@ -129,11 +129,9 @@ function computePointsFromImage() {
 
   quadtree = makeQuadtree(imgData, w, h, options.minDepth, options.maxDepth);
   points = pointsFromQuadtree(quadtree);
-  console.log(points.length)
   points = points.sort().filter(function(item, pos, array) {
       return pos == 0 || item.pos.x != array[pos - 1].pos.x || item.pos.y != array[pos - 1].pos.y;
   });
-  console.log(points.length)
   shuffleArray(points);
   groupedPoints = quantize(points, 2**options.k);
 }

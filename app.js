@@ -26,7 +26,12 @@ target.addEventListener('drop', (e) => {
   e.stopPropagation();
   e.preventDefault();
 
-  handleImageFile(e.dataTransfer.files[0]);
+  if (e.dataTransfer.files.length > 0){
+    handleImageFile(e.dataTransfer.files[0]);
+  } else {
+    console.log("No actual file was drag and dropped.")
+  }
+  target.classList.remove('dragover')
 });
 
 target.addEventListener('dragover', (e) => {
