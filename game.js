@@ -223,7 +223,7 @@ function computeAndDraw(){
   // if (options.showTriangles || options.showPolygons){
     computeDelaunay();
   // }
-  
+
   // if (options.showPolygons){
     computeAlphas();
     computeAlphaShape();
@@ -253,11 +253,11 @@ function drawArt() {
   // });
   // areas.sort();
   // areas.reverse();
-  
+
   // areas.forEach(area => {
   //   const index = area.index;
   for (let index = 0; index < groupedPoints.length; index++){
-    const color = output[index];
+    const color = palette[index];
     const del = dels[index];
     const alphaShape = alphaShapes[index];
     const coordList = coordLists[index];
@@ -329,7 +329,7 @@ class Line {
     // Start and end x-positions of the line
     this.sx = x + (Math.random()-0.5)*20.0;
     this.ex = x + 150.0 + (Math.random()-0.5)*20.0;
-    
+
     this.c1x = x+65 + (Math.random()-0.5)*20.0;
     this.c1y = canvas.height/3.0;
     this.c2x = x+60 + (Math.random()-0.5)*20.0;

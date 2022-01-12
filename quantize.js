@@ -1,7 +1,7 @@
 
-let pixels = undefined;
-let output = undefined;
-let data   = undefined;
+let pixels  = undefined;
+let palette = undefined;
+let data    = undefined;
 const cDistFunc = colourDistanceEuclidean;
 
 /**
@@ -19,15 +19,14 @@ function quantize(pts, k) {
     /* Create an array of pixel indices. */
     pixels = Array.from(Array(data.length >> 2).keys());
 
-    output = Array(0);
+    palette = Array(0);
     cut(0, pixels.length, k);
 
-    /* Output now should contain k colours. */
+    /* palette now should contain k colours. */
     /* Time to find which colour is closest. */
-    /* TODO: instead of index, add position. */
     const CC = [...Array(pixels.length)].map(findNearestColour).reduce(
         (pv, cv, idx) => { pv[cv].push(pts[idx]); return pv; },
-        [...Array(output.length)].map(a => [])
+        [...Array(palette.length)].map(a => [])
     );
 
     return CC;
@@ -55,7 +54,7 @@ function cut(i, j, k) {
         R = Math.sqrt((R / (j-i))) | 0;
         G = Math.sqrt((G / (j-i))) | 0;
         B = Math.sqrt((B / (j-i))) | 0;
-        output.push([R, G, B]);
+        palette.push([R, G, B]);
         return
     }
 
@@ -128,7 +127,7 @@ function sortRange(i, j, C) {
 }
 
 /**
- * Find which colour in `output` is the closest to the `index`th colour in the image.
+ * Find which colour in `palette` is the closest to the `index`th colour in the image.
  * @param {Number} element   Don't care about this ;)
  * @param {Number} index     The index in the original array, i.e. the how-manieth colour.
  */
@@ -138,8 +137,8 @@ function findNearestColour(element, index) {
     let minDistance = Infinity;
     let minIndex = -1;
 
-    /* Find the closest colour in output. */
-    for (const [i, oRGB] of output.entries()) {
+    /* Find the closest colour in palette. */
+    for (const [i, oRGB] of palette.entries()) {
         const distance = cDistFunc(RGB, oRGB);
         if (distance < minDistance) {
             minDistance = distance;
