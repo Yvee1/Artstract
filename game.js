@@ -62,6 +62,7 @@ function createGUI(){
     showTriangles: false,
     showImage: true,
     showQuadtree: false,
+    showQuadtreeOutline: true,
     debug: true,
     showOutline: false,
     saveImage: function(e) {
@@ -94,9 +95,10 @@ function createGUI(){
   layers.closed = false;
   layers.add(options, 'showImage').name("show image").onChange(() => { drawArt() });
   layers.add(options, 'showQuadtree').onChange(() => { drawArt() }).name("show quadtree");
+  layers.add(options, 'showQuadtreeOutline').onChange(() => { drawArt() }).name("show q.t. outline");
   layers.add(options, 'showPoints').onChange(() => { drawArt() }).name("show points");
   layers.add(options, 'showPolygons').onChange(() => { drawArt() }).name("show polygons");
-  layers.add(options, 'showOutline').onChange(() => { drawArt() }).name("show outline");
+  layers.add(options, 'showOutline').onChange(() => { drawArt() }).name("show poly. outline");
 
 
   debugFolder = gui.addFolder('Debug folder');
@@ -167,7 +169,11 @@ function drawQuadtree(node){
     drawQuadtree(node.southWest);
     drawQuadtree(node.southEast);
   } else {
-    ctx.strokeStyle = "black";
+    if (options.showQuadtreeOutline){
+      ctx.strokeStyle = "black";
+    } else {
+      ctx.strokeStyle = `rgb(${node.color[0]}, ${node.color[1]}, ${node.color[2]})`;
+    }
     ctx.strokeRect(xoff + node.x, yoff + node.y, node.w, node.h);
     ctx.fillStyle = `rgb(${node.color[0]}, ${node.color[1]}, ${node.color[2]})`;
     ctx.fillRect(xoff + node.x, yoff + node.y, node.w, node.h);
@@ -242,7 +248,7 @@ function drawArt() {
 
   if (options.showImage){
     ctx.save();
-    ctx.globalAlpha = 0.4;
+    // ctx.globalAlpha = 0.4;
     ctx.drawImage(image, xoff, yoff, w, h);
     ctx.restore();
   }
