@@ -101,7 +101,7 @@ function pointsFromQuadtree(root){
         newPoints.push(new Point(new Coordinate(x2 + xoff, y2 + yoff), new RGB(...getColor(x2, y2))));
       }
       if (node.y == 0){
-        newPoints.push(new Point(new Coordinate(x3 + xoff, y3 + yoff), new RGB(...getColor(x3, y4))));
+        newPoints.push(new Point(new Coordinate(x3 + xoff, y3 + yoff), new RGB(...getColor(x3, y3))));
       }
       newPoints.push(new Point(new Coordinate(x4 + xoff, y4 + yoff), new RGB(...getColor(x4, y4))));
       newPoints.push(new Point(new Coordinate(x5 + xoff, y5 + yoff), new RGB(...getColor(x5, y5))));
