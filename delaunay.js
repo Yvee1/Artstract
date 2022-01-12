@@ -1,14 +1,4 @@
 /**
- * Returns edges to draw Delaunay triangulation.
- * @param {Array<Coordinate>} P
- */
-function getDelaunayTriangulation(P) {
-  const coords = P.flatMap(c => [c.x, c.y]);
-  const delaunay = new Delaunator(coords);
-  return delaunay.triangles;
-}
-
-/**
  * Returns Coordinates of triangle around the input point set.
  */
  function getBoundingTriangle(P) {

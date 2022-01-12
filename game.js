@@ -79,6 +79,7 @@ function createGUI(){
   kController.onFinishChange(() => { computePointsFromImage(); computeAndDraw() });
 
   gui.add(options, 'maxDepth', 1, 9, 1).onFinishChange(() => { computePointsFromImage(); computeAndDraw() }).name("detail");
+  gui.add(options, 'maxAlpha', 0, 5).onChange(() => { computeAlphas(); computeAlphaShape(); drawArt() }).name("limit alpha");
   gui.add(options, 'saveImage')
 
   const layers = gui.addFolder('Layers');
@@ -90,25 +91,42 @@ function createGUI(){
   layers.add(options, 'showPolygons').onChange(() => { drawArt() }).name("show polygons");
   layers.add(options, 'showOutline').onChange(() => { drawArt() }).name("show poly. outline");
 
-  debugFolder = gui.addFolder('Debug folder');
-  debugFolder.add(options, 'maxAlpha', 0, 5).onChange(() => { computeAlphas(); computeAlphaShape(); drawArt() });
+  // debugFolder = gui.addFolder('Debug folder');
 
-  debugController = debugFolder.add(options, 'debug');
-  debugController.name("use our Delaunay")
-  debugController.onChange(() => drawArt());
+  // debugController = debugFolder.add(options, 'debug');
+  // debugController.name("use our Delaunay")
+  // debugController.onChange(() => drawArt());
 
-  showTrianglesController = debugFolder.add(options, 'showTriangles')
-  showTrianglesController.onChange(() => { drawArt() });
+  // showTrianglesController = debugFolder.add(options, 'showTriangles')
+  // showTrianglesController.onChange(() => { drawArt() });
 }
 
 function drawPoints(points){
   for (let i = 0; i < points.length; i++){
     const point = points[i];
+    // ctx.strokeStyle = "black";
     ctx.fillStyle = `rgb(${point.color.r}, ${point.color.g}, ${point.color.b})`;
     ctx.beginPath();
     ctx.arc(point.pos.x, point.pos.y, r, 0, 2*Math.PI);
     ctx.fill();
+    // ctx.stroke();
   }
+}
+
+function drawQuantizedPoints(index){
+  // for (let index = 0; index < groupedPoints.length; index++){
+    const color = palette[index];
+    const pts = groupedPoints[index];
+    for (let i = 0; i < pts.length; i++){
+      const point = pts[i];
+      // ctx.strokeStyle = "black";
+      ctx.fillStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
+      ctx.beginPath();
+      ctx.arc(point.pos.x, point.pos.y, r, 0, 2*Math.PI);
+      ctx.fill();
+      // ctx.stroke();
+    }
+  // }
 }
 
 function computePointsFromImage() {
@@ -170,14 +188,10 @@ function computeDelaunay(){
     let coordList = pts.map(p => p.pos);
 
     // Compute Delaunay triangulation
-    if (options.debug) {
-      const output = getDelaunayTriangulationIncremental(coordList);
-      dels.push(output[0]);
-      coordLists.push(output[1]);
-      searchStructures.push(output[2]);
-    } else {
-      dels.push(getDelaunayTriangulation(coordList));
-    }
+    const output = getDelaunayTriangulationIncremental(coordList);
+    dels.push(output[0]);
+    coordLists.push(output[1]);
+    searchStructures.push(output[2]);
   });
 }
 
@@ -210,15 +224,21 @@ function drawArt() {
   ctx.setLineDash([]);
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  if (options.showQuadtree){
-    drawQuadtree(quadtree);
-  }
-
   if (options.showImage){
     ctx.save();
     // ctx.globalAlpha = 0.4;
     ctx.drawImage(image, xoff, yoff, w, h);
     ctx.restore();
+  }
+
+  if (options.showQuadtree){
+    drawQuadtree(quadtree);
+  }
+
+  // Draw points
+  if (options.showPoints){
+    drawPoints(points);
+    // drawQuantizedPoints(0);
   }
 
   for (let index = 0; index < groupedPoints.length; index++){
@@ -279,11 +299,6 @@ function drawArt() {
         }
       }
     }
-  }
-
-  // Draw points
-  if (options.showPoints){
-    drawPoints(points);
   }
 }
 
