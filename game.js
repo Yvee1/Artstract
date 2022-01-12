@@ -5,7 +5,7 @@ let image, imgData, w, h, xoff, yoff, points, fewerPoints, groupedPoints;
 let quadtree, dels, alphaShapes, polygons, searchStructures, coordLists, selectedPolygon, alphas;
 let gui, options;
 
-const r = 2;
+const r = 2; // Radius of circles when drawing points
 
 canvas.parentElement.addEventListener("mousedown", function(evt){
   const rect = canvas.getBoundingClientRect();
@@ -73,24 +73,14 @@ function createGUI(){
       link.delete;
     }
   }
-  // offsetController = gui.add(options, 'offset', 5, 20, 1);
-  // offsetController.onChange(() => { computePointsFromImage(); drawArt() });
-
-  // dropoutController = gui.add(options, 'dropout', 0.0, 1.0);
-  // dropoutController.onChange(() => { computePointsFromImage(); drawArt() });
 
   kController = gui.add(options, 'k', 1, 6, 1)
   kController.name("#colors (2^k)")
   kController.onFinishChange(() => { computePointsFromImage(); computeAndDraw() });
 
-  // alphaController = gui.add(options, 'alpha', 0.1, 2, 0.01);
-  // alphaController.onChange(() => drawArt());
-
-  // gui.add(options, 'minDepth', 1, 7, 1).onChange(() => { computePointsFromImage(); drawArt() }).name("min. detail");
   gui.add(options, 'maxDepth', 1, 9, 1).onFinishChange(() => { computePointsFromImage(); computeAndDraw() }).name("detail");
-  // gui.add(options, 'gaps', 0.0, 0.1, 0.001).onChange(() => { drawArt() }).name("gaps");
-
   gui.add(options, 'saveImage')
+
   const layers = gui.addFolder('Layers');
   layers.closed = false;
   layers.add(options, 'showImage').name("show image").onChange(() => { drawArt() });
@@ -100,9 +90,7 @@ function createGUI(){
   layers.add(options, 'showPolygons').onChange(() => { drawArt() }).name("show polygons");
   layers.add(options, 'showOutline').onChange(() => { drawArt() }).name("show poly. outline");
 
-
   debugFolder = gui.addFolder('Debug folder');
-
   debugFolder.add(options, 'maxAlpha', 0, 5).onChange(() => { computeAlphas(); computeAlphaShape(); drawArt() });
 
   debugController = debugFolder.add(options, 'debug');
@@ -139,25 +127,13 @@ function computePointsFromImage() {
   // Get pixel data of canvas, and thus of the image
   imgData = imgCtx.getImageData(0, 0, w, h).data;
 
-  // Go through the pixels, making jumps of 5, sample the colors and draw circles.
-  // const off = options.offset;
-  // points = new Array(Math.ceil(w/off) * Math.ceil(h/off));
-  // let i = 0;
-
-  // for (let x = 0; x < w; x += off){
-  //   for (let y = 0; y < h; y += off){
-  //     const index = x + y * w;
-  //     const pos = new Coordinate(xoff + x + r, yoff + y + r);
-  //     const color = new RGB(imgData[4*index], imgData[4*index+1], imgData[4*index+2]);
-  //     points[i] = new Point(pos, color);
-  //     i++;
-  //   }
-  // }
-
-  // fewerPoints = points.filter(p => Math.random() > options.dropout);
-  // groupedPoints = quantize(fewerPoints, options.k);
   quadtree = makeQuadtree(imgData, w, h, options.minDepth, options.maxDepth);
   points = pointsFromQuadtree(quadtree);
+  console.log(points.length)
+  points = points.sort().filter(function(item, pos, array) {
+      return pos == 0 || item.pos.x != array[pos - 1].pos.x || item.pos.y != array[pos - 1].pos.y;
+  });
+  console.log(points.length)
   shuffleArray(points);
   groupedPoints = quantize(points, 2**options.k);
 }
@@ -226,15 +202,9 @@ function computeAlphaShape(){
 }
 
 function computeAndDraw(){
-  // if (options.showTriangles || options.showPolygons){
-    computeDelaunay();
-  // }
-
-  // if (options.showPolygons){
-    computeAlphas();
-    computeAlphaShape();
-  // }
-
+  computeDelaunay();
+  computeAlphas();
+  computeAlphaShape();
   drawArt();
 }
 
@@ -253,15 +223,6 @@ function drawArt() {
     ctx.restore();
   }
 
-  // const areas = dels.map((ts, i) => {
-  //   let obj = {area: ts.reduce((acc, t) => acc + t.area(coordLists[i]), 0), index: i}
-  //   return obj
-  // });
-  // areas.sort();
-  // areas.reverse();
-
-  // areas.forEach(area => {
-  //   const index = area.index;
   for (let index = 0; index < groupedPoints.length; index++){
     const color = palette[index];
     const del = dels[index];
@@ -272,7 +233,6 @@ function drawArt() {
       for (let i = 0; i < del.length; i++){
         ctx.lineWidth = 1;
         ctx.fillStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]}, 1.0)`;
-        // ctx.strokeStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]}, 1.0)`;
         ctx.strokeStyle = "black";
         ctx.beginPath();
         ctx.moveTo(coordList[del[i].v1].x, coordList[del[i].v1].y);
@@ -325,17 +285,17 @@ function drawArt() {
 
   // Draw points
   if (options.showPoints){
-    // drawPoints(fewerPoints);
     drawPoints(points);
   }
 }
 
 class Line {
   constructor(x){
-    // Start and end x-positions of the line
+    // Start and end x-positions of the curve
     this.sx = x + (Math.random()-0.5)*20.0;
     this.ex = x + 150.0 + (Math.random()-0.5)*20.0;
 
+    // Control points
     this.c1x = x+65 + (Math.random()-0.5)*20.0;
     this.c1y = canvas.height/3.0;
     this.c2x = x+60 + (Math.random()-0.5)*20.0;
