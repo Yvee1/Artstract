@@ -80,13 +80,13 @@ function createGUI(){
 
   kController = gui.add(options, 'k', 1, 6, 1)
   kController.name("#colors (2^k)")
-  kController.onChange(() => { computePointsFromImage(); computeAndDraw() });
+  kController.onFinishChange(() => { computePointsFromImage(); computeAndDraw() });
 
   // alphaController = gui.add(options, 'alpha', 0.1, 2, 0.01);
   // alphaController.onChange(() => drawArt());
 
   // gui.add(options, 'minDepth', 1, 7, 1).onChange(() => { computePointsFromImage(); drawArt() }).name("min. detail");
-  gui.add(options, 'maxDepth', 1, 9, 1).onChange(() => { computePointsFromImage(); computeAndDraw() }).name("detail");
+  gui.add(options, 'maxDepth', 1, 9, 1).onFinishChange(() => { computePointsFromImage(); computeAndDraw() }).name("detail");
   // gui.add(options, 'gaps', 0.0, 0.1, 0.001).onChange(() => { drawArt() }).name("gaps");
 
   gui.add(options, 'saveImage')
