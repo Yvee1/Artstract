@@ -1,7 +1,10 @@
-function area(x1, y1, x2, y2, x3, y3) {
-  return Math.abs((x1*(y2-y3) + x2*(y3-y1)+ x3*(y1-y2)));
+/**
+ * Computes area of triangle
+ * https://www.geeksforgeeks.org/check-whether-a-given-point-lies-inside-a-triangle-or-not/
+ */
+function area(a, b, c) {
+  return Math.abs((a.x*(b.y-c.y) + b.x*(c.y-a.y)+ c.x*(a.y-b.y)));
 }
-  
 
 class Coordinate {
   constructor(x, y) {
@@ -13,44 +16,25 @@ class Coordinate {
     return `(${this.x}, ${this.y})`;
   }
 
-  // /* Returns whether this coordinate lies in the triangle */
-  // isInTriangle(triangle, coordList) {
-  //   const p1 = coordList[triangle.v1];
-  //   const p2 = coordList[triangle.v2];
-  //   const p3 = coordList[triangle.v3];
-  //   if (this === p1 || this === p2 || this === p3) {
-  //     return true;
-  //   }
-
-  //   const d1 = sign(this, p1, p2);
-  //   const d2 = sign(this, p2, p3);
-  //   const d3 = sign(this, p3, p1);
-
-  //   const hasNeg = (d1 < 0) || (d2 < 0) || (d3 < 0);
-  //   const hasPos = (d1 > 0) || (d2 > 0) || (d3 > 0);
-  //   return !(hasNeg && hasPos);
-  // }
-
+  /**
+   * Checks if point is in or on triangle.
+   * 
+   * https://www.geeksforgeeks.org/check-whether-a-given-point-lies-inside-a-triangle-or-not/
+   */
   isInTriangle(triangle, coordList) {
-    const x1 = coordList[triangle.v1].x;
-    const y1 = coordList[triangle.v1].y;
-    const x2 = coordList[triangle.v2].x;
-    const y2 = coordList[triangle.v2].y;
-    const x3 = coordList[triangle.v3].x;
-    const y3 = coordList[triangle.v3].y;
+    const a = coordList[triangle.v1];
+    const b = coordList[triangle.v2];
+    const c = coordList[triangle.v3];
 
-    const A = area (x1, y1, x2, y2, x3, y3);
+    const A = area(a, b, c);
   
-    /* Calculate area of triangle PBC */ 
-    const A1 = area (this.x, this.y, x2, y2, x3, y3);
-  
-    /* Calculate area of triangle PAC */ 
-    const A2 = area (x1, y1, this.x, this.y, x3, y3);
-  
-    /* Calculate area of triangle PAB */  
-    const A3 = area (x1, y1, x2, y2, this.x, this.y);
+    // Calculate area of triangle PBC
+    const A1 = area(this, b, c);
+    // Calculate area of triangle PAC
+    const A2 = area(a, this, c);
+    // Calculate area of triangle PAB
+    const A3 = area(a, b, this);
     
-    /* Check if sum of A1, A2 and A3 is same as A */
     return (A === A1 + A2 + A3);
   }
 }
@@ -91,14 +75,6 @@ class Edge {
     return ((e.u === this.u && e.v == this.v) || (e.u === this.v && e.v == this.u));
   }
 
-  draw(coordList) {
-    ctx.fillStyle = 'black';
-    ctx.beginPath();
-    ctx.moveTo(coordList[this.u].x, coordList[this.u].y);
-    ctx.lineTo(coordList[this.v].x, coordList[this.v].y);
-    ctx.stroke();
-  }
-  
   /** Return Euclidian distance between this.u, this.v. */
   getLength(coordList) {
     const c1 = coordList[this.u];
@@ -118,7 +94,10 @@ class Triangle {
     this.edges = this.getEdges();
   }
 
-  /** TODO: Code from SO. */
+  /** 
+   * Checks if p lies on edge
+   * https://stackoverflow.com/questions/11907947/how-to-check-if-a-point-lies-on-a-line-between-2-other-points
+   */
   liesOnEdge(edge, p, coordList) {
     const p1 = coordList[edge.u];
     const p2 = coordList[edge.v];
@@ -135,6 +114,7 @@ class Triangle {
     return (cross === 0)
   }
 
+  /** Returns the edge on which p lies or null if it does not exist. */
   getTriangleEdgeIfOnEdge(p, coordList) {
     for (let i = 0; i < this.edges.length; i++) {
       const edge = this.edges[i];
@@ -160,13 +140,7 @@ class Triangle {
     });
   }
 
-  draw(coordList) {
-    this.edges.forEach(edge => {
-      edge.draw(coordList);
-    })
-  }
-
-  /**TODO: code from SO */
+  /** https://stackoverflow.com/questions/39984709/how-can-i-check-wether-a-point-is-inside-the-circumcircle-of-3-points/44875841 */
   isStoredCounterClockWise(coordList) {
     const a = coordList[this.v1];
     const b = coordList[this.v2];
@@ -174,11 +148,15 @@ class Triangle {
     return (b.x - a.x)*(c.y - a.y)-(c.x - a.x)*(b.y - a.y) > 0;
   }
 
-  /**TODO: code from SO */
-  circumCircleContains(p, coordList) {
-    const a = coordList[this.v1];
-    const b = coordList[this.v2];
-    const c = coordList[this.v3];
+  /** https://stackoverflow.com/questions/39984709/how-can-i-check-wether-a-point-is-inside-the-circumcircle-of-3-points/44875841 */
+  circumCircleContains(p, coordList, storedCCW) {
+    let a = coordList[this.v1];
+    let b = coordList[this.v2];
+    let c = coordList[this.v3];
+    if (!storedCCW) {
+      a = coordList[this.v3];
+      c = coordList[this.v1];
+    }
     const d = coordList[p];
     let ax_ = a.x-d.x;
     let ay_ = a.y-d.y;
@@ -211,12 +189,5 @@ class Triangle {
     const b = coordList[this.v2].toString();
     const c = coordList[this.v3].toString();
     return `Triangle(${a}, ${b}, ${c})`;
-  }
-
-  area(coordList){
-    const a = coordList[this.v1];
-    const b = coordList[this.v2];
-    const c = coordList[this.v3];
-    return (a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y))/2;
   }
 }

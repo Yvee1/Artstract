@@ -8,44 +8,6 @@ function getDelaunayTriangulation(P) {
   return delaunay.triangles;
 }
 
-function sign(p1, p2, p3) {
-  return (p1.x - p3.x) * (p2.y - p3.y) - (p2.x - p3.x) * (p1.y - p3.y);
-}
-
-
-/**TODO: code from SO */
-function isStoredCounterClockWise(v1, v2, v3, coordList) {
-  const a = coordList[v1];
-  const b = coordList[v2];
-  const c = coordList[v3];
-  return (b.x - a.x)*(c.y - a.y)-(c.x - a.x)*(b.y - a.y) > 0;
-}
-
-/**TODO: code from SO */
-function circumCircleContains(v1, v2, v3, p, coordList) {
-  const a = coordList[v1];
-  const b = coordList[v2];
-  const c = coordList[v3];
-  const d = coordList[p];
-  let ax_ = a.x-d.x;
-  let ay_ = a.y-d.y;
-  let bx_ = b.x-d.x;
-  let by_ = b.y-d.y;
-  let cx_ = c.x-d.x;
-  let cy_ = c.y-d.y;
-  return (
-      (ax_*ax_ + ay_*ay_) * (bx_*cy_-cx_*by_) -
-      (bx_*bx_ + by_*by_) * (ax_*cy_-cx_*ay_) +
-      (cx_*cx_ + cy_*cy_) * (ax_*by_-bx_*ay_)
-  ) > 0;
-}
-
-function drawTriangles(triangles, coordList) {
-  triangles.forEach(triangle => {
-    triangle.draw(coordList);
-  })
-}
-
 /**
  * Returns Coordinates of triangle around the input point set.
  */
@@ -84,7 +46,7 @@ function drawTriangles(triangles, coordList) {
 /**
  * Randomize array in-place using Durstenfeld shuffle algorithm
  *  
- * TODO: reference since copied from SO
+ * https://stackoverflow.com/questions/2450954/how-to-randomize-shuffle-a-javascript-array
  */
 function shuffleArray(array) {
   for (var i = array.length - 1; i > 0; i--) {
@@ -101,7 +63,7 @@ function shuffleArray(array) {
 class TriangleSearchTreeNode {
   constructor(triangle) {
     this.triangle = triangle;
-    this.deleted = false;
+        this.deleted = false; // contains if triangle is search
 
     this.adjacentTriangleNodes = [];
     this.containing = false;
@@ -231,7 +193,7 @@ class TriangleSearchTreeNode {
     }
   }
 
-
+  /** Updates tree node to point to legalized nodes. */
   flipped(node1, node2) {
     this.deleted = true;
     this.descendants = [node1, node2]
@@ -278,27 +240,23 @@ class TriangleSearchTreeNode {
 
   /** Check if edge is legal. */
   isIllegal(edge, coordList) {
-    const v1 = edge.u;
-    const v2 = this.triangle.getOppositeVertex(edge);
-    const v3 = edge.v;
-
+    const triangle = new Triangle(edge.u, this.triangle.getOppositeVertex(edge), edge.v);
     const adjTriangleNode = this.getAdjacentTriangleNode(edge);
-    if (adjTriangleNode == null) return false;
-
+    if (adjTriangleNode == null) return false; // not illegal if no adjacent triangle node present (bounding triangle)
     const v4 = adjTriangleNode.triangle.getOppositeVertex(edge);
 
-    if (isStoredCounterClockWise(v1, v2, v3, coordList)) {
-      return (circumCircleContains(v1, v2, v3, v4, coordList));
-    } else {
-      return (circumCircleContains(v3, v2, v1, v4, coordList));
-    }
+    const storedCCW = triangle.isStoredCounterClockWise(coordList)
+    return triangle.circumCircleContains(v4, coordList, storedCCW);
   }
 }
 
 /**
  * Get all triangles from the search structure.
+ * 
+ * Use getTrianglesAdjacent
  */
 function getTriangles(node, traversedNodes = []) {
+  console.log('You used getTriangles, use getTrianglesAdjacent instead.')
   // prune already traversed nodes
   if (traversedNodes.includes(node)) return [];
   traversedNodes.push(node)
@@ -315,27 +273,11 @@ function getTriangles(node, traversedNodes = []) {
   }
 }
 
-function getTrianglesIterative(root){
-  const triangles = [];
-  const traversedNodes = [];
-  
-  const stack = [root];
-  while (stack.length > 0){
-    const node = stack.pop();
-    if (traversedNodes.includes(node)){ continue };
-    traversedNodes.push(node);
-    if (!node.deleted){
-      triangles.push(node.triangle);
-      continue;
-    }
-    for (let i = 0; i < node.descendants.length; i++){
-      stack.push(node.descendants[i]);
-    }
-  }
-
-  return triangles;
-}
-
+/**
+ * Returns all leaves of search tree.
+ * @param {TriangleSearchTreeNode} root 
+ * @returns array of triangle instances
+ */
 function getTrianglesAdjacent(root){
   const triangles = [];
   let node = root;
@@ -358,8 +300,7 @@ function getTrianglesAdjacent(root){
     for (let i = 0; i < current.adjacentTriangleNodes.length; i++){
       const adj = current.adjacentTriangleNodes[i];
       if (adj.deleted){
-        console.log("This message should never show up.");
-        continue;
+        throw "Error: should never be here.";
       }
       if (seenNodes.includes(adj)){
         continue;
@@ -378,7 +319,6 @@ function getTrianglesAdjacent(root){
  * Implementation: Tristan
  */
 function getDelaunayTriangulationIncremental(P) {
-  // shuffleArray(P); // shuffle in place
   const boundingTriangleCoords = getBoundingTriangle(P);
   const [topLeftCoordinate, topRightCoordinate, bottomCoordinate] = boundingTriangleCoords;
   const coordList = P.concat(boundingTriangleCoords);
@@ -389,15 +329,6 @@ function getDelaunayTriangulationIncremental(P) {
     [topRightCoordinate, bottomCoordinate], 
     [bottomCoordinate, topLeftCoordinate]
   ];
-
-  // draw bounding triangle
-  // largeTriangleEdges.forEach(edge => {
-  //   ctx.fillStyle = 'black';
-  //   ctx.beginPath();
-  //   ctx.moveTo(edge[0].x, edge[0].y);
-  //   ctx.lineTo(edge[1].x, edge[1].y);
-  //   ctx.stroke();
-  // });
 
   const containingTriangle = [P.length, P.length+1, P.length+2]
 
@@ -412,25 +343,10 @@ function getDelaunayTriangulationIncremental(P) {
     if (enclosingTriangle){
       enclosingTriangle.split(i, coordList);
     } else {
-      throw 'Error; not found';
+      throw 'Error: point does not lie in bounding triangle.';
     }
   }
 
-  // let triangles = getTrianglesIterative(S);
   let triangles = getTrianglesAdjacent(S);
-
-  // ctx.clearRect(0, 0, canvas.width, canvas.height);
-  // drawTriangles(triangles, coordList);
-
-  // change triangles to desired format
-  // let delaunayTriangles = [];
-  // triangles.forEach(triangle => {
-  //   // check for large triangle
-  //   const trianglePoints = [triangle.v1, triangle.v2, triangle.v3];
-  //   if (trianglePoints.filter(p => containingTriangle.includes(p)).length === 0) {
-  //     delaunayTriangles.push(...trianglePoints);
-  //   }
-  // });
-
   return [triangles, coordList, S];
 }
