@@ -32,7 +32,7 @@ document.addEventListener('keydown', function(e){
 function focus(pos){
   var found = -1;
   for (let i = searchStructures.length - 1; i >= 0; i--){
-    const result = searchStructures[i].getTriangleNodeContaining(pos, coordLists[i]);
+    const result = searchStructures[i].getTriangleNodeContaining(pos, delCoordLists[i]);
     if (result != false && !result.containing && result.filtered) {
       found = i;
       break;
@@ -60,11 +60,15 @@ function createGUI(){
     showPoints: false,
     showPolygons: true,
     showTriangles: false,
-    showImage: true,
+    showImage: false,
     showQuadtree: false,
     showQuadtreeOutline: true,
     debug: true,
     showOutline: false,
+    showQuantizedPoints: false,
+    quantizedPointsIndex: 0,
+    showTriangulation: false,
+    triangulationIndex: 0,
     saveImage: function(e) {
       const link = document.createElement('a');
       link.download = 'download.png';
@@ -86,12 +90,16 @@ function createGUI(){
   layers.closed = false;
   layers.add(options, 'showImage').name("show image").onChange(() => { drawArt() });
   layers.add(options, 'showQuadtree').onChange(() => { drawArt() }).name("show quadtree");
-  layers.add(options, 'showQuadtreeOutline').onChange(() => { drawArt() }).name("show q.t. outline");
   layers.add(options, 'showPoints').onChange(() => { drawArt() }).name("show points");
+  layers.add(options, 'showTriangulation').onChange(() => { drawArt() }).name("show triangulation");
   layers.add(options, 'showPolygons').onChange(() => { drawArt() }).name("show polygons");
-  layers.add(options, 'showOutline').onChange(() => { drawArt() }).name("show poly. outline");
 
-  // debugFolder = gui.addFolder('Debug folder');
+  layerSettings = gui.addFolder('Layer settings');
+  layerSettings.add(options, 'showQuadtreeOutline').onChange(() => { drawArt() }).name("quadtree outline");
+  layerSettings.add(options, 'showQuantizedPoints').onChange(() => { drawArt() }).name("quantized points");
+  layerSettings.add(options, 'quantizedPointsIndex').onChange(() => { drawArt() }).name("quantized index");
+  layerSettings.add(options, 'triangulationIndex').onChange(() => { drawArt() }).name("triangulation index");
+  layerSettings.add(options, 'showOutline').onChange(() => { drawArt() }).name("polygon outline");
 
   // debugController = debugFolder.add(options, 'debug');
   // debugController.name("use our Delaunay")
@@ -183,6 +191,7 @@ function imageDataFromPoints(points){
 function computeDelaunay(){
   searchStructures = [];
   coordLists = [];
+  delCoordLists = [];
   dels = [];
   groupedPoints.forEach (pts => {
     let coordList = pts.map(p => p.pos);
@@ -190,7 +199,8 @@ function computeDelaunay(){
     // Compute Delaunay triangulation
     const output = getDelaunayTriangulationIncremental(coordList);
     dels.push(output[0]);
-    coordLists.push(output[1]);
+    coordLists.push(coordList);
+    delCoordLists.push(output[1]);
     searchStructures.push(output[2]);
   });
 }
@@ -237,67 +247,81 @@ function drawArt() {
 
   // Draw points
   if (options.showPoints){
-    drawPoints(points);
-    // drawQuantizedPoints(0);
+    if (options.showQuantizedPoints){
+      if (options.quantizedPointsIndex >= 0 && options.quantizedPointsIndex < 2**options.k){
+        drawQuantizedPoints(options.quantizedPointsIndex);
+      }
+    } else {
+      drawPoints(points);
+    }
   }
 
-  for (let index = 0; index < groupedPoints.length; index++){
-    const color = palette[index];
-    const del = dels[index];
-    const alphaShape = alphaShapes[index];
-    const coordList = coordLists[index];
+  if (options.showTriangulation){
+    for (let index = 0; index < groupedPoints.length; index++){
+      const color = palette[index];
+      const del = dels[index];
+      const coordList = coordLists[index];
 
-    if (options.showTriangles){
-      for (let i = 0; i < del.length; i++){
-        ctx.lineWidth = 1;
-        ctx.fillStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]}, 1.0)`;
-        ctx.strokeStyle = "black";
-        ctx.beginPath();
-        ctx.moveTo(coordList[del[i].v1].x, coordList[del[i].v1].y);
-        ctx.lineTo(coordList[del[i].v2].x, coordList[del[i].v2].y);
-        ctx.lineTo(coordList[del[i].v3].x, coordList[del[i].v3].y);
-        ctx.lineTo(coordList[del[i].v1].x, coordList[del[i].v1].y);
-        ctx.fill();
-        ctx.stroke();
+      if (options.triangulationIndex === index){
+        for (let i = 0; i < del.length; i++){
+          if (Math.max(del[i].v1, del[i].v2, del[i].v3) < coordList.length){
+            ctx.lineWidth = 1;
+            ctx.fillStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]}, 1.0)`;
+            ctx.strokeStyle = "black";
+            ctx.beginPath();
+            ctx.moveTo(coordList[del[i].v1].x, coordList[del[i].v1].y);
+            ctx.lineTo(coordList[del[i].v2].x, coordList[del[i].v2].y);
+            ctx.lineTo(coordList[del[i].v3].x, coordList[del[i].v3].y);
+            ctx.lineTo(coordList[del[i].v1].x, coordList[del[i].v1].y);
+            ctx.fill();
+            ctx.stroke();
+          }
+        }
       }
     }
+  }
 
-    if (options.showPolygons){
-      const alphaTriangles = alphaShape[0];
+  if (options.showPolygons){
+    for (let index = 0; index < groupedPoints.length; index++){
+      const color = palette[index];
+      const alphaShape = alphaShapes[index];
+      const coordList = coordLists[index];
 
-      // Draw inside of alpha shapes
-      ctx.lineWidth = 1;
-      ctx.fillStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]}, 1.0)`;
-      ctx.strokeStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]}, 1.0)`;
-      if (selectedPolygon !== undefined && selectedPolygon !== index){
-        ctx.fillStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]}, 0.2)`;
-        ctx.strokeStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]}, 0.2)`;
-      }
-      alphaTriangles.forEach(polygon => {
-        ctx.beginPath();
-        ctx.moveTo(coordList[polygon[0]].x, coordList[polygon[0]].y);
-        for (let i = 1; i < polygon.length+1; i++){
-          ctx.lineTo(coordList[polygon[i%polygon.length]].x, coordList[polygon[i%polygon.length]].y);
+        const alphaTriangles = alphaShape[0];
+
+        // Draw inside of alpha shapes
+        ctx.lineWidth = 1;
+        ctx.fillStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]}, 1.0)`;
+        ctx.strokeStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]}, 1.0)`;
+        if (selectedPolygon !== undefined && selectedPolygon !== index){
+          ctx.fillStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]}, 0.1)`;
+          ctx.strokeStyle = `rgb(${color[0]}, ${color[1]}, ${color[2]}, 0.1)`;
         }
-        ctx.fill();
-        ctx.stroke();
-      })
+        alphaTriangles.forEach(polygon => {
+          ctx.beginPath();
+          ctx.moveTo(coordList[polygon[0]].x, coordList[polygon[0]].y);
+          for (let i = 1; i < polygon.length+1; i++){
+            ctx.lineTo(coordList[polygon[i%polygon.length]].x, coordList[polygon[i%polygon.length]].y);
+          }
+          ctx.fill();
+          ctx.stroke();
+        })
 
-      // Draw outline of alpha shapes
-      if (options.showOutline){
-        if (selectedPolygon === undefined || selectedPolygon == index){
-          polygons[index].forEach(polygon => {
-            ctx.lineWidth = 2;
-            ctx.strokeStyle = 'black';
-            ctx.beginPath();
-            ctx.moveTo(coordList[polygon[0]].x, coordList[polygon[0]].y);
-            for (let i = 1; i < polygon.length+1; i++){
-              ctx.lineTo(coordList[polygon[i%polygon.length]].x, coordList[polygon[i%polygon.length]].y);
-            }
-            ctx.stroke();
-          })
+        // Draw outline of alpha shapes
+        if (options.showOutline){
+          if (selectedPolygon === undefined || selectedPolygon == index){
+            polygons[index].forEach(polygon => {
+              ctx.lineWidth = 2;
+              ctx.strokeStyle = 'black';
+              ctx.beginPath();
+              ctx.moveTo(coordList[polygon[0]].x, coordList[polygon[0]].y);
+              for (let i = 1; i < polygon.length+1; i++){
+                ctx.lineTo(coordList[polygon[i%polygon.length]].x, coordList[polygon[i%polygon.length]].y);
+              }
+              ctx.stroke();
+            })
+          }
         }
-      }
     }
   }
 }
