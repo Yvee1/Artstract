@@ -2,12 +2,14 @@ const realUploadButton = document.getElementById("file-upload");
 const fakeButton = document.getElementById("image-button");
 const gameTitle = document.getElementById("game-title");
 const backButton = document.getElementById("back-button");
+const startScreenElmnt = document.getElementById("start-screen");
+const infoButton = document.getElementById("info-button");
+const infoScreen = document.getElementById("info-screen");
+const exitInfo = document.getElementById("exit-info");
 
 backButton.addEventListener("click", () => {
   quadtree = dels = alphaShapes = polygons = searchStructures = coordLists = selectedPolygon = undefined;
-  fakeButton.classList.remove("hidden");
-  gameTitle.classList.remove("hidden");
-  target.classList.remove("hidden");
+  startScreenElmnt.classList.remove("hidden");
   backButton.classList.add("hidden");
   gui.destroy();
   startScreen = true;
@@ -68,9 +70,7 @@ function handleImageFile(file){
     img.src = event.target.result;
 
     // Remove start menu GUI
-    fakeButton.classList.add("hidden");
-    gameTitle.classList.add("hidden");
-    target.classList.add("hidden");
+    startScreenElmnt.classList.add("hidden");
     backButton.classList.remove("hidden");
   }
 
@@ -89,3 +89,11 @@ function handleImageFile(file){
   // Read the image file
   reader.readAsDataURL(file);
 }
+
+infoButton.addEventListener("click", () => {
+  infoScreen.classList.remove("hidden");
+});
+
+exitInfo.addEventListener("click", () => {
+  infoScreen.classList.add("hidden");
+});

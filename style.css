@@ -7,7 +7,6 @@ body {
 #game .button {
     display: inline-block;
     /* background-color: #00aade; */
-    background-color: #33aa33;
     transition: background-color .5s;
     color: white;
     border-radius: 8px;
@@ -16,6 +15,10 @@ body {
     padding: 8px 25px;
     cursor: pointer;
     position: relative;
+
+    margin: auto;
+    filter: drop-shadow(0px 4px 5px grey);
+    transition-duration: 0.5s;
 }
 
 #game {
@@ -44,11 +47,17 @@ body {
 }
 
 #image-button {
-    display: block;
     width: 12em;
-    margin: auto;
-    filter: drop-shadow(0px 4px 5px grey);
-    transition-duration: 0.5s;
+    background-color: #33aa33;
+}
+
+#info-button {
+    width: 12em;
+    background-color: #aaaaaa;
+}
+
+#info-button:hover {
+    background-color: #999999;
 }
 
 #image-button:hover {
@@ -58,7 +67,7 @@ body {
 #game-title {
     font-size: 2.8em;
     padding: 1em;
-    padding-bottom: 2.2em;
+    padding-bottom: 2em;
     text-shadow:
    -5px -5px 5px white,  
     5px -5px 5px white,
@@ -71,6 +80,7 @@ body {
     display: block;
     width: 16em;
     margin-top: 1em;
+    margin-bottom: 1em;
     margin-left: auto;
     margin-right: auto;
     padding: 1em;
@@ -84,7 +94,6 @@ body {
 }
 
 #back-button {
-    position: absolute;
     width: 6em;
     left: -7em;
     top: 600px;
@@ -97,6 +106,87 @@ body {
     cursor: pointer;
     position: relative;
     transform: translateY(-100%);
+}
+
+#mouse-icon {
+    text-align: center;
+}
+
+#mouse-icon img {
+    vertical-align: middle;
+    margin-left: 3em;
+    margin-right: 2em;
+}
+
+#mouse-icon span {
+    /* height: 50px; */
+    width: 25em;
+    vertical-align: middle;
+    display: inline-block;
+    line-height: normal;
+    text-align: left;
+}
+
+#info-screen.hidden {
+    background-color: rgba(255, 255, 255, 0.0);
+    z-index: -100;
+    display: block !important;
+    border: 1px solid rgba(0, 0, 0, 0);
+    filter: drop-shadow(0px 4px 5px rgba(255, 255, 255, 0));
+    color:rgba(0, 0, 0, 0);
+}
+
+#info-screen.hidden #mouse-icon {
+    opacity: 0;
+}
+
+#info-screen #mouse-icon {
+    opacity: 1;
+    transition: opacity .5s;
+}
+
+#info-screen {
+    transition: color .5s, background-color .5s, border .5s;
+    position: absolute;
+    left: 50px;
+    top: 50px;
+    padding-left: 50px;
+    padding-right: 50px;
+    padding-top: 25px;
+    padding-bottom: 25px;
+    width: 600px;
+    height: 450px;
+    background-color: rgba(255, 255, 255, 1);
+    border: 1px solid black;
+    z-index: 100;
+
+    text-align: left;
+    /* filter: drop-shadow(0px 4px 5px grey); */
+}
+
+#info-screen h1 {
+    text-align: center;
+}
+
+#info-screen h2 {
+    text-align: center;
+}
+
+#info-screen.hidden #exit-info {
+    color:rgba(0, 0, 0, 0);
+    border: 1px solid rgba(0, 0, 0, 0);
+}
+
+#exit-info {
+    width: 6em;
+    margin: auto;
+    padding: 2px;
+    transition: color .5s, background-color .5s, border .5s;
+    color: black;
+    border: 1px solid black;
+    cursor: pointer;
+    text-align: center;
+    margin-top: 100px;
 }
 
 .hidden {

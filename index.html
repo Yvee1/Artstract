@@ -24,14 +24,26 @@
 
   <body>
     <div id="game">
+      <div id="info-screen" class="hidden">
+        <h1>Info</h1>
+        <span>Lorem ipsum dolor sit amet, consectetuer adipiscing elit.  Ut purus elit, vestibulum ut, placerat ac,adipiscing vitae, felis. Curabitur dictum gravida mauris. Nam arcu libero, nonummy eget, consecte-tuer id, vulputate a, magna. Donec vehicula augue eu neque. Pellentesque habitant morbi tristiquesenectus et netus et malesuada fames ac turpis egestas.  Mauris ut leo.  Cras viverra metus rhoncussem.  Nulla et lectus vestibulum urna fringilla ultrices.  Phasellus eu tellus sit amet tortor gravidaplacerat.</span>
+        <h2>Controls</h2>
+        <div id="mouse-icon"><img src="mouse.svg" alt="Mouse" width="30"><span>Click to select a polygon and use the arrow up and down keys to modify its alpha.</span></div>
+        <div id="exit-info">Return</div>
+      </div>
       <div id="back-button" class="hidden">Go back</div>
+
       <canvas width="800" height="600" id="pixi-canvas"></canvas>
-      <h1 id="game-title">Artstract</h1>
-      <div id="image-button" class="button">Upload image</div>
-      <input type="file" id="file-upload" accept="image/*" style="display:none">
-      <img id="image" style="display:none">
-      <div id="drag-and-drop-target">Or drag an image file here</div>
+
+      <div id="start-screen">
+        <h1 id="game-title">Artstract</h1>
+        <div id="image-button" class="button">Upload image</div>
+        <input type="file" id="file-upload" accept="image/*" style="display:none">
+        <div id="drag-and-drop-target">Or drag an image file here</div>
+        <div id="info-button" class="button">Info</div>
+      </div>
     </div>
+
 
     <script src="classes.js"></script>
     <script src="delaunay.js"></script>
