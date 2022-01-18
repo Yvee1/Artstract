@@ -3,6 +3,7 @@ const ctx = canvas.getContext('2d');
 let startScreen = true;
 let image, imgData, w, h, xoff, yoff, points, fewerPoints, groupedPoints;
 let quadtree, dels, alphaShapes, polygons, searchStructures, coordLists, selectedPolygon, alphas;
+let prevK, prevMaxDepth;
 let gui, options;
 
 const r = 2; // Radius of circles when drawing points
@@ -24,9 +25,10 @@ document.addEventListener('keydown', function(e){
     if (e.key == 'ArrowUp' || e.key == 'Up'){
       alphas[selectedPolygon] *= change;
     }
+  
+    computeAlphaShape();
+    drawArt();
   }
-  computeAlphaShape();
-  drawArt();
 })
 
 function focus(pos){
@@ -40,10 +42,11 @@ function focus(pos){
   }
   if (found >= 0 && found != selectedPolygon){
     selectedPolygon = found;
-  } else {
+    drawArt();
+  } else if (selectedPolygon !== undefined){
     selectedPolygon = undefined;
+    drawArt();
   }
-  drawArt();
 }
 
 function createGUI(){
@@ -78,11 +81,21 @@ function createGUI(){
     }
   }
 
+  prevK = options.k;
+  prevMaxDepth = options.maxDepth;
+
   kController = gui.add(options, 'k', 1, 6, 1)
   kController.name("#colors (2^k)")
-  kController.onFinishChange(() => { computePointsFromImage(); computeAndDraw() });
+  kController.onFinishChange(() => { if (prevK != options.k) { 
+    prevK = options.k; computePointsFromImage(); computeAndDraw() }
+  });
 
-  gui.add(options, 'maxDepth', 1, 9, 1).onFinishChange(() => { computePointsFromImage(); computeAndDraw() }).name("detail");
+  gui.add(options, 'maxDepth', 1, 9, 1)
+    .onFinishChange(() => { console.log(options.maxDepth);
+      if (prevMaxDepth != options.maxDepth){ 
+        prevMaxDepth = options.maxDepth; computePointsFromImage(); computeAndDraw() } 
+      })
+    .name("detail");
   gui.add(options, 'maxAlpha', 0, 5).onChange(() => { computeAlphas(); computeAlphaShape(); drawArt() }).name("limit alpha");
   gui.add(options, 'saveImage')
 
