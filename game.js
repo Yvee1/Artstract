@@ -87,11 +87,11 @@ function createGUI(){
   kController = gui.add(options, 'k', 1, 6, 1)
   kController.name("#colors (2^k)")
   kController.onFinishChange(() => { if (prevK != options.k) { 
-    prevK = options.k; computePointsFromImage(); computeAndDraw() }
+    prevK = options.k; selectedPolygon = undefined; computePointsFromImage(); computeAndDraw() }
   });
 
   gui.add(options, 'maxDepth', 1, 9, 1)
-    .onFinishChange(() => { console.log(options.maxDepth);
+    .onFinishChange(() => { 
       if (prevMaxDepth != options.maxDepth){ 
         prevMaxDepth = options.maxDepth; computePointsFromImage(); computeAndDraw() } 
       })
@@ -188,7 +188,11 @@ function drawQuadtree(node){
       ctx.strokeStyle = `rgb(${node.color[0]}, ${node.color[1]}, ${node.color[2]})`;
     }
     ctx.strokeRect(xoff + node.x, yoff + node.y, node.w, node.h);
-    ctx.fillStyle = `rgb(${node.color[0]}, ${node.color[1]}, ${node.color[2]})`;
+    if (selectedPolygon === undefined){
+      ctx.fillStyle = `rgb(${node.color[0]}, ${node.color[1]}, ${node.color[2]})`;
+    } else {
+      ctx.fillStyle = `rgb(${node.color[0]}, ${node.color[1]}, ${node.color[2]}, 0.1)`;
+    }
     ctx.fillRect(xoff + node.x, yoff + node.y, node.w, node.h);
   }
 }
@@ -249,13 +253,20 @@ function drawArt() {
 
   if (options.showImage){
     ctx.save();
-    // ctx.globalAlpha = 0.4;
+    if (selectedPolygon !== undefined){
+      ctx.globalAlpha = 0.1;
+    }
     ctx.drawImage(image, xoff, yoff, w, h);
     ctx.restore();
   }
 
   if (options.showQuadtree){
+    ctx.save();
+    if (selectedPolygon !== undefined){
+      ctx.globalAlpha = 0.1;
+    }
     drawQuadtree(quadtree);
+    ctx.restore();
   }
 
   // Draw points
