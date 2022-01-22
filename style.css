@@ -134,6 +134,7 @@ body {
     border: 1px solid rgba(0, 0, 0, 0);
     filter: drop-shadow(0px 4px 5px rgba(255, 255, 255, 0));
     color:rgba(0, 0, 0, 0);
+    transition: color .5s, background-color .5s, border .5s, z-index 0s ease 0.5s;
 }
 
 #info-screen.hidden #mouse-icon {
@@ -177,6 +178,15 @@ body {
     border: 1px solid rgba(0, 0, 0, 0);
 }
 
+#info-screen * {
+    opacity: 1;
+    transition: opacity .5s;
+}
+
+#info-screen.hidden * {
+    opacity: 0;
+}
+
 #exit-info {
     width: 6em;
     margin: auto;
@@ -186,7 +196,7 @@ body {
     border: 1px solid black;
     cursor: pointer;
     text-align: center;
-    margin-top: 100px;
+    margin-top: 50px;
 }
 
 .hidden {
