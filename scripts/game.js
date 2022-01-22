@@ -96,7 +96,7 @@ function createGUI(){
         prevMaxDepth = options.maxDepth; computePointsFromImage(); computeAndDraw() } 
       })
     .name("detail");
-  gui.add(options, 'maxAlpha', 0, 5).onChange(() => { computeAlphas(); computeAlphaShape(); drawArt() }).name("limit alpha");
+  gui.add(options, 'maxAlpha', 0, 5).onFinishChange(() => { computeAlphas(); computeAlphaShape(); drawArt() }).name("limit alpha");
   gui.add(options, 'saveImage')
 
   const layers = gui.addFolder('Layers');
